@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Suspend/Hibernate
+Name[de]=Ruhezustand
+Comment=Suspend device, then hibernate
+Comment[de]=Die Sitzung speichern, danach Ruhezustand
+Exec=systemctl suspend-then-hibernate
+Icon=system-suspend
+Categories=System;X-Leave;
