@@ -14,7 +14,9 @@ accent-color='orange'
 color-scheme='prefer-dark'
 cursor-theme='Adwaita'
 gtk-theme='Adwaita-dark'
-icon-theme='Adwaita'
+icon-theme='Papirus-Dark'
+document-font-name='Sans 11'
+font-name='Adwaita Sans 11'
 monospace-font-name='Adwaita Mono 11'
 clock-show-date=true
 clock-show-weekday=true
@@ -52,6 +54,10 @@ idle-delay=uint32 300
 
 [org.gnome.desktop.sound]
 allow-volume-above-100-percent=true
+input-feedback-sounds=true
+
+[org.gnome.desktop.input-sources]
+show-all-sources=true
 
 [org.gnome.desktop.wm.preferences]
 button-layout='appmenu:minimize,maximize,close'
@@ -64,7 +70,7 @@ picture-uri='file:///usr/share/backgrounds/shani/saturn-x.png'
 logo='/usr/share/pixmaps/shani-logo-text-dark.svg'
 
 [org.gnome.desktop.app-folders]
-folder-children=['accessories', 'games', 'office', 'system-tools']
+folder-children=['Accessories', 'Games', 'Office', 'System-tools', 'Utilities']
 
 [org.gtk.settings.file-chooser]
 sort-directories-first=true
@@ -72,9 +78,6 @@ location-mode='filename-entry'
 
 [org.gnome.file-roller.dialogs.extract]
 recreate-folders=true
-
-[org.gnome.nautilus.icon-view]
-default-zoom-level = 'standard'
 
 [org.gnome.nautilus.preferences]
 always-use-location-entry=true
