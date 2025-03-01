@@ -1,8 +1,8 @@
 [org.gnome.shell]
 disable-extension-version-validation=true
 always-show-log-out=true
-favorite-apps=['com.google.Chrome.desktop', 'com.vivaldi.Vivaldi.desktop', 'firefox.desktop', 'thunderbird.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Console.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Calculator.desktop', 'org.gnome.Settings.desktop', 'org.gnome.Software.desktop']
-enabled-extensions=['GPaste@gnome-shell-extensions.gnome.org', 'appindicatorsupport@rgcjonas.gmail.com']
+favorite-apps=['com.google.Chrome.desktop', 'com.vivaldi.Vivaldi.desktop', 'org.onlyoffice.desktopeditors.desktop', 'firefox.desktop', 'thunderbird.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Console.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Calculator.desktop', 'org.gnome.Settings.desktop', 'org.gnome.Software.desktop']
+enabled-extensions=['GPaste@gnome-shell-extensions.gnome.org', 'appindicatorsupport@rgcjonas.gmail.com', 'caffeine@patapon.info']
 
 [org.gnome.desktop.background]
 picture-uri='file:///usr/share/backgrounds/shani/saturn-x.png'
@@ -13,9 +13,9 @@ show-desktop-icons=true
 accent-color='orange'
 color-scheme='prefer-dark'
 cursor-theme='Adwaita'
-gtk-theme='Adwaita-dark'
+gtk-theme='adw-gtk3-dark'
 icon-theme='Papirus-Dark'
-document-font-name='Sans 11'
+document-font-name='Adwaita Sans 11'
 font-name='Adwaita Sans 11'
 monospace-font-name='Adwaita Mono 11'
 clock-show-date=true
@@ -94,6 +94,9 @@ overlay-key='Super_L'
 dynamic-workspaces = true
 edge-tiling = true
 center-new-windows = true
+
+[org.gnome.TextEditor]
+show-line-numbers = true
 
 [org.gnome.desktop.wm.keybindings]
 close=['<Super>q']
