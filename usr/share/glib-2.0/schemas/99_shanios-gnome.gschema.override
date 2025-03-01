@@ -44,6 +44,8 @@ two-finger-scrolling-enabled=true
 tap-and-drag=true
 
 [org.gnome.desktop.privacy]
+usb-protection=true
+usb-protection-level=lockscreen
 old-files-age=uint32 7
 recent-files-max-age=7
 remove-old-temp-files=true
