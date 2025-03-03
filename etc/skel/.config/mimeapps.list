@@ -1,4 +1,215 @@
-[Added Associations]
+[Default Applications]
+# ---------------------------------------------------------------------
+# Text Files
+# ---------------------------------------------------------------------
 text/plain=org.gnome.TextEditor.desktop;
+text/vnd.trolltech.linguist=org.gnome.TextEditor.desktop;
+
+# ---------------------------------------------------------------------
+# Web & URI Handling
+# ---------------------------------------------------------------------
+text/html=com.vivaldi.Vivaldi.desktop;
+application/xhtml+xml=com.vivaldi.Vivaldi.desktop;
+x-scheme-handler/http=com.vivaldi.Vivaldi.desktop;
+x-scheme-handler/https=com.vivaldi.Vivaldi.desktop;
+x-scheme-handler/mailto=com.vivaldi.Vivaldi.desktop;
+x-scheme-handler/about=google-chrome.desktop;
+x-scheme-handler/unknown=google-chrome.desktop;
+x-scheme-handler/webcal=google-chrome.desktop;
+
+# ---------------------------------------------------------------------
+# Calendar
+# ---------------------------------------------------------------------
+text/calendar=org.gnome.Calendar.desktop;
+
+# ---------------------------------------------------------------------
+# Documents & eBooks (Papers)
+# ---------------------------------------------------------------------
 application/pdf=org.gnome.Papers.desktop;
+application/epub+zip=org.gnome.Papers.desktop;
+
+# ---------------------------------------------------------------------
+# Audio Formats (Default: Amberol)
+# ---------------------------------------------------------------------
+audio/x-vorbis+ogg=io.bassi.Amberol.desktop;
+audio/vorbis=io.bassi.Amberol.desktop;
+audio/x-vorbis=io.bassi.Amberol.desktop;
+audio/x-speex=io.bassi.Amberol.desktop;
+audio/mpeg=io.bassi.Amberol.desktop;
+audio/x-mp1=io.bassi.Amberol.desktop;
+audio/x-mp2=io.bassi.Amberol.desktop;
+audio/x-mp3=io.bassi.Amberol.desktop;
+audio/x-mpeg=io.bassi.Amberol.desktop;
+audio/x-mpg=io.bassi.Amberol.desktop;
+audio/mp4=io.bassi.Amberol.desktop;
+audio/x-m4a=io.bassi.Amberol.desktop;
+audio/x-aac=io.bassi.Amberol.desktop;
+audio/x-matroska=io.bassi.Amberol.desktop;
+audio/x-mpegurl=io.bassi.Amberol.desktop;
+audio/x-scpls=io.bassi.Amberol.desktop;
+audio/x-aiff=io.bassi.Amberol.desktop;
+audio/x-pn-aiff=io.bassi.Amberol.desktop;
+audio/wav=io.bassi.Amberol.desktop;
+audio/x-pn-au=io.bassi.Amberol.desktop;
+audio/x-pn-wav=io.bassi.Amberol.desktop;
+audio/x-ape=io.bassi.Amberol.desktop;
+audio/x-it=io.bassi.Amberol.desktop;
+audio/x-mod=io.bassi.Amberol.desktop;
+audio/x-s3m=io.bassi.Amberol.desktop;
+audio/x-xm=io.bassi.Amberol.desktop;
+audio/x-stm=io.bassi.Amberol.desktop;
+audio/x-m4b=io.bassi.Amberol.desktop;
+audio/x-opus+ogg=io.bassi.Amberol.desktop;
+
+# ---------------------------------------------------------------------
+# Video Formats (Default: Showtime)
+# ---------------------------------------------------------------------
+video/x-ogm+ogg=org.gnome.Showtime.desktop;
+video/ogg=org.gnome.Showtime.desktop;
+video/x-theora+ogg=org.gnome.Showtime.desktop;
+video/x-theora=org.gnome.Showtime.desktop;
+video/x-ms-asf=org.gnome.Showtime.desktop;
+video/x-ms-asf-plugin=org.gnome.Showtime.desktop;
+video/x-ms-asx=org.gnome.Showtime.desktop;
+video/x-ms-wm=org.gnome.Showtime.desktop;
+video/x-ms-wmv=org.gnome.Showtime.desktop;
+video/x-ms-wmx=org.gnome.Totem.desktop;
+video/x-ms-wvx=org.gnome.Showtime.desktop;
+video/x-msvideo=org.gnome.Showtime.desktop;
+video/divx=org.gnome.Showtime.desktop;
+video/msvideo=org.gnome.Showtime.desktop;
+video/vnd.divx=org.gnome.Showtime.desktop;
+video/mp2t=org.gnome.Showtime.desktop;
+video/mpeg=org.gnome.Showtime.desktop;
+video/mpeg-system=org.gnome.Showtime.desktop;
+video/x-mpeg=org.gnome.Showtime.desktop;
+video/x-mpeg2=org.gnome.Showtime.desktop;
+video/mp4=org.gnome.Showtime.desktop;
+video/mp4v-es=org.gnome.Showtime.desktop;
+video/x-m4v=org.gnome.Showtime.desktop;
+video/quicktime=org.gnome.Showtime.desktop;
+video/x-matroska=org.gnome.Showtime.desktop;
+video/webm=org.gnome.Showtime.desktop;
+video/3gp=org.gnome.Showtime.desktop;
+video/3gpp=org.gnome.Showtime.desktop;
+video/3gpp2=org.gnome.Showtime.desktop;
+video/vnd.mpegurl=org.gnome.Showtime.desktop;
+video/dv=org.gnome.Showtime.desktop;
+video/x-anim=org.gnome.Showtime.desktop;
+video/x-nsv=org.gnome.Showtime.desktop;
+video/fli=org.gnome.Showtime.desktop;
+video/flv=org.gnome.Showtime.desktop;
+video/x-flc=org.gnome.Showtime.desktop;
+video/x-fli=org.gnome.Showtime.desktop;
+video/x-flv=org.gnome.Showtime.desktop;
+video/vivo=org.gnome.Showtime.desktop;
+video/vnd.vivo=org.gnome.Showtime.desktop;
+video/x-flic=org.gnome.Showtime.desktop;
+video/x-mjpeg=org.gnome.Showtime.desktop;
+video/x-totem-stream=org.gnome.Totem.desktop;
+
+# ---------------------------------------------------------------------
+# Image Formats (Default: Loupe)
+# ---------------------------------------------------------------------
+image/jpeg=org.gnome.Loupe.desktop;
+image/png=org.gnome.Loupe.desktop;
+image/webp=org.gnome.Loupe.desktop;
+image/svg+xml=org.gnome.Loupe.desktop;
+image/heic=org.gnome.Loupe.desktop;
+image/heif=org.gnome.Loupe.desktop;
+image/bmp=org.gnome.Loupe.desktop;
+image/avif=org.gnome.Loupe.desktop;
+image/jxl=org.gnome.Loupe.desktop;
+image/tiff=org.gnome.Loupe.desktop;
+image/gif=org.gnome.Loupe.desktop;
+image/x-icon=org.gnome.Loupe.desktop;
+image/vnd-ms.dds=org.gnome.Loupe.desktop;
+image/jpg=org.gnome.Loupe.desktop;
+image/pjpeg=org.gnome.Loupe.desktop;
+image/x-bmp=org.gnome.Loupe.desktop;
+image/x-gray=org.gnome.Loupe.desktop;
+image/x-icb=org.gnome.Loupe.desktop;
+image/x-ico=org.gnome.Loupe.desktop;
+image/x-png=org.gnome.Loupe.desktop;
+image/x-portable-anymap=org.gnome.Loupe.desktop;
+image/x-portable-bitmap=org.gnome.Loupe.desktop;
+image/x-portable-graymap=org.gnome.Loupe.desktop;
+image/x-portable-pixmap=org.gnome.Loupe.desktop;
+image/x-xbitmap=org.gnome.Loupe.desktop;
+image/x-xpixmap=org.gnome.Loupe.desktop;
+image/x-pcx=org.gnome.Loupe.desktop;
+image/svg+xml-compressed=org.gnome.Loupe.desktop;
+image/vnd.wap.wbmp=org.gnome.Loupe.desktop;
+image/x-icns=org.gnome.Loupe.desktop;
+
+# ---------------------------------------------------------------------
+# Office Documents & Presentations (OnlyOffice)
+# ---------------------------------------------------------------------
+application/vnd.oasis.opendocument.text=org.onlyoffice.desktopeditors.desktop;
+application/vnd.oasis.opendocument.text-template=org.onlyoffice.desktopeditors.desktop;
+application/vnd.oasis.opendocument.text-web=org.onlyoffice.desktopeditors.desktop;
+application/vnd.oasis.opendocument.text-master=org.onlyoffice.desktopeditors.desktop;
+application/vnd.sun.xml.writer=org.onlyoffice.desktopeditors.desktop;
+application/vnd.sun.xml.writer.template=org.onlyoffice.desktopeditors.desktop;
+application/vnd.sun.xml.writer.global=org.onlyoffice.desktopeditors.desktop;
+application/msword=org.onlyoffice.desktopeditors.desktop;
+application/vnd.ms-word=org.onlyoffice.desktopeditors.desktop;
+application/x-doc=org.onlyoffice.desktopeditors.desktop;
+application/rtf=org.onlyoffice.desktopeditors.desktop;
+text/rtf=org.onlyoffice.desktopeditors.desktop;
+application/vnd.wordperfect=org.onlyoffice.desktopeditors.desktop;
+application/wordperfect=org.onlyoffice.desktopeditors.desktop;
+application/vnd.openxmlformats-officedocument.wordprocessingml.document=org.onlyoffice.desktopeditors.desktop;
+application/vnd.ms-word.document.macroenabled.12=org.onlyoffice.desktopeditors.desktop;
+application/vnd.openxmlformats-officedocument.wordprocessingml.template=org.onlyoffice.desktopeditors.desktop;
+application/vnd.ms-word.template.macroenabled.12=org.onlyoffice.desktopeditors.desktop;
+
+application/vnd.oasis.opendocument.spreadsheet=org.onlyoffice.desktopeditors.desktop;
+application/vnd.oasis.opendocument.spreadsheet-template=org.onlyoffice.desktopeditors.desktop;
+application/vnd.sun.xml.calc=org.onlyoffice.desktopeditors.desktop;
+application/vnd.sun.xml.calc.template=org.onlyoffice.desktopeditors.desktop;
+application/msexcel=org.onlyoffice.desktopeditors.desktop;
+application/vnd.ms-excel=org.onlyoffice.desktopeditors.desktop;
+application/vnd.openxmlformats-officedocument.spreadsheetml.sheet=org.onlyoffice.desktopeditors.desktop;
+application/vnd.ms-excel.sheet.macroenabled.12=org.onlyoffice.desktopeditors.desktop;
+application/vnd.openxmlformats-officedocument.spreadsheetml.template=org.onlyoffice.desktopeditors.desktop;
+application/vnd.ms-excel.template.macroenabled.12=org.onlyoffice.desktopeditors.desktop;
+application/vnd.ms-excel.sheet.binary.macroenabled.12=org.onlyoffice.desktopeditors.desktop;
+text/csv=org.onlyoffice.desktopeditors.desktop;
+text/spreadsheet=org.onlyoffice.desktopeditors.desktop;
+application/csv=org.onlyoffice.desktopeditors.desktop;
+application/excel=org.onlyoffice.desktopeditors.desktop;
+application/x-excel=org.onlyoffice.desktopeditors.desktop;
+application/x-msexcel=org.onlyoffice.desktopeditors.desktop;
+application/x-ms-excel=org.onlyoffice.desktopeditors.desktop;
+text/comma-separated-values=org.onlyoffice.desktopeditors.desktop;
+text/tab-separated-values=org.onlyoffice.desktopeditors.desktop;
+text/x-comma-separated-values=org.onlyoffice.desktopeditors.desktop;
+text/x-csv=org.onlyoffice.desktopeditors.desktop;
+
+application/vnd.oasis.opendocument.presentation=org.onlyoffice.desktopeditors.desktop;
+application/vnd.oasis.opendocument.presentation-template=org.onlyoffice.desktopeditors.desktop;
+application/vnd.sun.xml.impress=org.onlyoffice.desktopeditors.desktop;
+application/vnd.sun.xml.impress.template=org.onlyoffice.desktopeditors.desktop;
+application/mspowerpoint=org.onlyoffice.desktopeditors.desktop;
+application/vnd.ms-powerpoint=org.onlyoffice.desktopeditors.desktop;
+application/vnd.openxmlformats-officedocument.presentationml.presentation=org.onlyoffice.desktopeditors.desktop;
+application/vnd-ms-powerpoint-slideshow-macroenabled-12=org.onlyoffice.desktopeditors.desktop;
+application/vnd.ms-powerpoint.presentation.macroenabled.12=org.onlyoffice.desktopeditors.desktop;
+application/vnd.openxmlformats-officedocument.presentationml.template=org.onlyoffice.desktopeditors.desktop;
+application/vnd-ms-powerpoint-template-macroenabled-12=org.onlyoffice.desktopeditors.desktop;
+application/vnd.openxmlformats-officedocument.presentationml.slide=org.onlyoffice.desktopeditors.desktop;
+application/vnd.openxmlformats-officedocument.presentationml.slideshow=org.onlyoffice.desktopeditors.desktop;
+x-scheme-handler/oo-office=org.onlyoffice.desktopeditors.desktop;
+text/docxf=org.onlyoffice.desktopeditors.desktop;
+text/oform=org.onlyoffice.desktopeditors.desktop;
+text/markdown=org.onlyoffice.desktopeditors.desktop;
+application/vnd.apple.pages=org.onlyoffice.desktopeditors.desktop;
+application/vnd.apple.numbers=org.onlyoffice.desktopeditors.desktop;
+application/vnd.apple.keynote=org.onlyoffice.desktopeditors.desktop;
+application/x-latex=org.onlyoffice.desktopeditors.desktop;
+application/vnd.visio=org.onlyoffice.desktopeditors.desktop;
+application/x-iwork-keynote-sffkey=org.onlyoffice.desktopeditors.desktop;
+application/x-iwork-pages-sffpages=org.onlyoffice.desktopeditors.desktop;
+application/x-iwork-numbers-sffnumbers=org.onlyoffice.desktopeditors.desktop;
 
