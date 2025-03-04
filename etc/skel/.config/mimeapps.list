@@ -9,7 +9,12 @@ text/vnd.trolltech.linguist=org.gnome.TextEditor.desktop;
 # Web & URI Handling
 # ---------------------------------------------------------------------
 text/html=com.vivaldi.Vivaldi.desktop;
+text/xml=com.vivaldi.Vivaldi.desktop;
+application/xhtml_xml=com.vivaldi.Vivaldi.desktop;
 application/xhtml+xml=com.vivaldi.Vivaldi.desktop;
+application/rdf+xml=com.vivaldi.Vivaldi.desktop;
+application/rss+xml=com.vivaldi.Vivaldi.desktop;
+x-scheme-handler/ftp=com.vivaldi.Vivaldi.desktop;
 x-scheme-handler/http=com.vivaldi.Vivaldi.desktop;
 x-scheme-handler/https=com.vivaldi.Vivaldi.desktop;
 x-scheme-handler/mailto=com.vivaldi.Vivaldi.desktop;
