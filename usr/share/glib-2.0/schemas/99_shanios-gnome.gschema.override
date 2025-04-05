@@ -1,7 +1,7 @@
 [org.gnome.shell]
 disable-extension-version-validation=true
 always-show-log-out=true
-favorite-apps=['com.google.Chrome.desktop', 'com.vivaldi.Vivaldi.desktop', 'org.onlyoffice.desktopeditors.desktop', 'firefox.desktop', 'thunderbird.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Console.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Calculator.desktop', 'org.gnome.Settings.desktop', 'org.gnome.Software.desktop']
+favorite-apps=['com.google.Chrome.desktop', 'com.vivaldi.Vivaldi.desktop', 'org.onlyoffice.desktopeditors.desktop', 'firefox.desktop', 'thunderbird.desktop', 'org.gnome.Evolution.desktop', 'org.gnome.Nautilus.desktop', 'org.gnome.Console.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Calculator.desktop', 'org.gnome.Settings.desktop', 'org.gnome.Software.desktop']
 enabled-extensions=['GPaste@gnome-shell-extensions.gnome.org', 'appindicatorsupport@rgcjonas.gmail.com', 'caffeine@patapon.info']
 
 [org.gnome.desktop.background]
