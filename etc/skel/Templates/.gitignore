@@ -1,0 +1,56 @@
+# -----------------------------------------------------------------------------
+# Usage:
+#   Place this file in the root of your git repository.
+#   Git will automatically ignore the listed files and directories.
+# -----------------------------------------------------------------------------
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+vendor/
+__pycache__/
+*.pyc
+*.pyo
+
+# Build output
+dist/
+build/
+out/
+target/
+*.o
+*.a
+*.so
+
+# Container images
+*.sif
+Containerfile.bak
+Dockerfile.bak
+
+# Compose overrides
+compose.override.yaml
+docker-compose.override.yaml
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak

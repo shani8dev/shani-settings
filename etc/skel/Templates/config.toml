@@ -1,0 +1,19 @@
+# -----------------------------------------------------------------------------
+# Usage:
+#   your-app --config config.toml
+#   or place it where your app expects it (check its docs)
+# -----------------------------------------------------------------------------
+
+[general]
+name = "my-app"
+version = "1.0.0"
+# debug = false
+
+[server]
+# host = "localhost"
+# port = 8080
+
+[database]
+# host = "localhost"
+# port = 5432
+# name = "mydb"

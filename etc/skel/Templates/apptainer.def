@@ -1,0 +1,73 @@
+# -----------------------------------------------------------------------------
+# Build:  apptainer build my-image.sif apptainer.def
+# Run:    apptainer run my-image.sif
+#         apptainer exec my-image.sif /bin/bash
+#         apptainer shell my-image.sif
+# Note:   .sif is the built image format (Singularity Image Format)
+#         $HOME is automatically bind-mounted into the container at runtime.
+#         Apptainer was formerly known as Singularity.
+# -----------------------------------------------------------------------------
+
+# Bootstrap must always be the first line
+Bootstrap: docker
+From: ubuntu:24.04
+
+%labels
+    Author your-name
+    Version 1.0.0
+    Description What does this container do?
+
+%help
+    This container does:
+        (describe your container here)
+
+    Usage:
+        apptainer run my-image.sif
+        apptainer exec my-image.sif /bin/bash
+        apptainer shell my-image.sif
+
+    Note:
+        $HOME is automatically available inside the container at runtime.
+        Use $HOME for your data — no bind mounts needed for personal files.
+
+%environment
+    export LANG=C.UTF-8
+    export LC_ALL=C.UTF-8
+    # $HOME is available at runtime and points to your real home directory
+    # export PATH=$HOME/.local/bin:$PATH
+    # export MY_VAR=value
+
+%post
+    # Everything here runs at BUILD TIME inside a writable container.
+    # Note: $HOME is not available here — use /root for build-time files.
+    # At runtime $HOME is automatically bind-mounted from the host.
+    apt-get update && apt-get install -y \
+        curl \
+        && rm -rf /var/lib/apt/lists/*
+
+    # Install your app here
+
+%files
+    # Copy files from host into container at BUILD TIME (not runtime).
+    # For runtime data use $HOME — it is automatically available.
+    # source_file /destination/in/container
+
+%test
+    # Runs after build to verify the container works correctly.
+    # apptainer test my-image.sif
+    echo "Testing container..."
+    curl --version || exit 1
+    echo "All tests passed."
+
+%runscript
+    # Runs when: apptainer run my-image.sif
+    # $HOME is available here and points to your real home directory.
+    echo "Container started"
+    exec "$@"
+
+%startscript
+    # Runs when used as a persistent instance:
+    #   apptainer instance start my-image.sif my-instance
+    #   apptainer instance stop my-instance
+    # $HOME is available here and points to your real home directory.
+    echo "Instance started"

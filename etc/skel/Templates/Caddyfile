@@ -1,0 +1,29 @@
+# -----------------------------------------------------------------------------
+# Usage:
+#   caddy run            uses ./Caddyfile in current directory
+#   caddy reload         reload without restart
+#   System-wide:         /etc/caddy/Caddyfile
+# -----------------------------------------------------------------------------
+
+example.com {
+
+    # Serve static files
+    root * /var/www/html
+    file_server
+
+    # OR reverse proxy to a local app
+    # reverse_proxy localhost:8080
+
+    # Enable gzip compression
+    # encode gzip
+
+    # Access log
+    log {
+        output file /var/log/caddy/access.log
+    }
+}
+
+# Local development example:
+# localhost:8080 {
+#     reverse_proxy localhost:3000
+# }
