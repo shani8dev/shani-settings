@@ -1,21 +1,31 @@
-polkit.addRule(function(action, subject) {
-    if (action.id.indexOf("org.freedesktop.udisks2.") == 0 &&
-        subject.isInGroup("wheel"))
-    {
-        return polkit.Result.YES;
-    }
-});
+// ─────────────────────────────────────────────────────────────────────────────
+// 99-shani.rules — Polkit rules for ShaniOS
+//
+// Two tiers:
+//
+//   TIER 1 — any active local session, no group required
+//     Full normal desktop functionality including package management,
+//     firmware updates, Flatpak, Snap, and OS updates. Works whether or
+//     not the wheel group exists. Any logged-in local user gets a complete
+//     desktop experience without needing to belong to any privileged group.
+//     Most operations require the user's own password (AUTH_SELF).
+//     Routine desktop actions (power, mount, network) are passwordless (YES).
+//
+//   TIER 2 — wheel group + active local session
+//     Destructive or system-structural operations only.
+//     AUTH_SELF  — own password required (disk formatting, hostname, etc.)
+//     AUTH_ADMIN — administrator credential required (irreversible only)
+//
+// If the system has no wheel group, Tier 1 covers everything a normal
+// user needs. Tier 2 operations simply remain unavailable until a wheel
+// group is provisioned and the user is added to it.
+// ─────────────────────────────────────────────────────────────────────────────
 
-polkit.addRule(function(action, subject) {
-    if ((action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
-         action.id == "org.freedesktop.udisks2.filesystem-mount" ||
-         action.id == "org.freedesktop.udisks2.filesystem-mount-other-seat" ||
-         action.id == "org.freedesktop.udisks.filesystem-fstab") &&
-        subject.isInGroup("wheel"))
-    {
-        return polkit.Result.YES;
-    }
-});
+// ═════════════════════════════════════════════════════════════════════════════
+// TIER 1 — any active local session, passwordless
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ── Power management ─────────────────────────────────────────────────────────
 
 polkit.addRule(function(action, subject) {
     if ((action.id == "org.freedesktop.login1.power-off" ||
@@ -25,62 +35,873 @@ polkit.addRule(function(action, subject) {
          action.id == "org.freedesktop.login1.hibernate" ||
          action.id == "org.freedesktop.login1.hibernate-multiple-sessions" ||
          action.id == "org.freedesktop.login1.suspend" ||
-         action.id == "org.freedesktop.login1.suspend-multiple-sessions") &&
-        subject.isInGroup("wheel"))
-    {
-        return polkit.Result.YES;
+         action.id == "org.freedesktop.login1.suspend-multiple-sessions" ||
+         action.id == "org.freedesktop.login1.lock-sessions" ||
+         action.id == "org.freedesktop.login1.set-user-linger" ||
+         action.id == "org.freedesktop.upower.suspend" ||
+         action.id == "org.freedesktop.upower.hibernate") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
     }
 });
 
+// Power profiles — switch between power-saver/balanced/performance
 polkit.addRule(function(action, subject) {
-    if ((action.id == "org.freedesktop.upower.hibernate" ||
-         action.id == "org.freedesktop.upower.suspend") &&
-        subject.isInGroup("wheel"))
-    {
-        return polkit.Result.YES;
+    if (action.id == "net.hadess.PowerProfiles.switch-profile" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
     }
 });
+
+// ── Disk and storage — safe operations ───────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.udisks2.filesystem-mount" ||
+         action.id == "org.freedesktop.udisks2.filesystem-mount-system" ||
+         action.id == "org.freedesktop.udisks2.filesystem-mount-other-seat" ||
+         action.id == "org.freedesktop.udisks2.filesystem-unmount-others" ||
+         action.id == "org.freedesktop.udisks.filesystem-fstab" ||
+         action.id == "org.freedesktop.udisks2.eject-media" ||
+         action.id == "org.freedesktop.udisks2.loop-setup" ||
+         action.id == "org.freedesktop.udisks2.encrypted-unlock" ||
+         action.id == "org.freedesktop.udisks2.encrypted-unlock-system" ||
+         action.id == "org.freedesktop.udisks2.encrypted-lock" ||
+         action.id == "org.freedesktop.udisks2.power-off-drive" ||
+         action.id == "org.freedesktop.udisks2.power-off-drive-system" ||
+         action.id == "org.freedesktop.udisks2.ata-smart-selftest" ||
+         action.id == "org.freedesktop.udisks2.drive-set-spindown") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Network — routine operations ─────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.NetworkManager.network-control" ||
+         action.id == "org.freedesktop.NetworkManager.wifi.scan" ||
+         action.id == "org.freedesktop.NetworkManager.enable-disable-wifi" ||
+         action.id == "org.freedesktop.NetworkManager.enable-disable-network" ||
+         action.id == "org.freedesktop.NetworkManager.enable-disable-wwan" ||
+         action.id == "org.freedesktop.NetworkManager.enable-disable-connectivity-check" ||
+         action.id == "org.freedesktop.NetworkManager.enable-disable-statistics" ||
+         action.id == "org.freedesktop.NetworkManager.wifi.add-and-activate-connection" ||
+         action.id == "org.freedesktop.NetworkManager.settings.modify.own" ||
+         action.id == "org.freedesktop.NetworkManager.checkpoint-rollback" ||
+         action.id == "org.freedesktop.NetworkManager.sleep") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── System time, timezone, locale, keyboard ───────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.timedate1.set-time" ||
+         action.id == "org.freedesktop.timedate1.set-timezone" ||
+         action.id == "org.freedesktop.timedate1.set-ntp" ||
+         action.id == "org.freedesktop.locale1.set-locale" ||
+         action.id == "org.freedesktop.locale1.set-keyboard") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Bluetooth ─────────────────────────────────────────────────────────────────
 
 polkit.addRule(function(action, subject) {
     if ((action.id == "org.blueman.network.setup" ||
          action.id == "org.blueman.dhcp.client" ||
          action.id == "org.blueman.rfkill.setstate" ||
          action.id == "org.blueman.pppd.pppconnect") &&
-        subject.isInGroup("wheel"))
-    {
-        return polkit.Result.YES;
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
     }
 });
 
-polkit.addRule(function(action, subject) { 
-    if ((action.id == "org.opensuse.cupspkhelper.mechanism.all-edit") && 
-        subject.isInGroup("wheel"))
-    { 
-        return polkit.Result.YES; 
-    } 
+// ── Printing ──────────────────────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.cups.cupsd.printer.create-local" ||
+         action.id == "org.cups.cupsd.printer.delete" ||
+         action.id == "org.opensuse.cupspkhelper.mechanism.all-edit") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
 });
 
+// ── GPU control (corectrl) ────────────────────────────────────────────────────
 
 polkit.addRule(function(action, subject) {
     if ((action.id == "org.corectrl.helper.init" ||
          action.id == "org.corectrl.helperkiller.init") &&
-        subject.isInGroup("wheel"))
-    {
-        return polkit.Result.YES;
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
     }
 });
 
-// Allow users in wheel group to communicate with USBGuard
+// ── Color management (colord) ─────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.color-manager.create-device" ||
+         action.id == "org.freedesktop.color-manager.create-profile" ||
+         action.id == "org.freedesktop.color-manager.delete-device" ||
+         action.id == "org.freedesktop.color-manager.delete-profile" ||
+         action.id == "org.freedesktop.color-manager.modify-device" ||
+         action.id == "org.freedesktop.color-manager.modify-profile" ||
+         action.id == "org.freedesktop.color-manager.sensor-lock") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Realtime scheduling (RealtimeKit / PipeWire) ──────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.RealtimeKit1.acquireRealtime" ||
+         action.id == "org.freedesktop.RealtimeKit1.acquireHighPriority") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── USB device policy — read-only ─────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.usbguard.Devices1.listDevices" ||
+         action.id == "org.usbguard1.getParameter") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Flatpak — update already-installed apps ───────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.Flatpak.update" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Container login ───────────────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.machine1.login" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── DNS cache flush ───────────────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.resolve1.flush-caches" ||
+         action.id == "org.freedesktop.resolve1.reset-statistics") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Fingerprint — verify and identify ────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "net.reactivated.fprint.device.verify" ||
+         action.id == "net.reactivated.fprint.device.identify") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Firewall — read-only info ─────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.fedoraproject.FirewallD1.info" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Virtual machine monitoring (read-only) ────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.libvirt.unix.monitor" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── System profiling (sysprof) ────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.gnome.sysprof3.profile" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── User own data ─────────────────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.accounts.change-own-user-data" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── GVFS / GIO network and virtual filesystem mounts ─────────────────────────
+// Required for Nautilus (and any GTK file manager) to mount network shares,
+// MTP devices, Google Drive, and other GIO backends without a password prompt.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.gtk.vfs.file-operations" ||
+         action.id == "org.gtk.vfs.mount" ||
+         action.id == "org.gtk.vfs.mount-with-operation" ||
+         action.id == "org.gtk.vfs.unmount-mounts" ||
+         action.id == "org.gtk.vfs.query-info") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Mobile broadband — status and signal reads ────────────────────────────────
+// Allows network managers and status applets to read modem state without
+// password. Write/control operations remain Tier 2.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.ModemManager1.Device.Control.basic" ||
+         action.id == "org.freedesktop.ModemManager1.ussd" ||
+         action.id == "org.freedesktop.ModemManager1.Contacts") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Session user-linger (for long-running user services) ──────────────────────
+// Allows the current user to enable linger for their own account so user
+// systemd units (like shani-update.timer) survive after logout.
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.login1.set-user-linger" &&
+        subject.active == true && subject.local == true &&
+        action.lookup("uid") == subject.user.uid) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Shani OS system update (shani-deploy) ─────────────────────────────────────
+
+// INTENTIONAL DESIGN: No wheel group required.
+// ShaniOS is a single-user-oriented desktop OS. Any active local user can
+// trigger a system update via pkexec with their own password (AUTH_SELF).
+//
+// Rationale:
+//   - shani-update is the user-facing interface; shani-deploy is never called
+//     directly by users. This rule is what makes pkexec shani-deploy work.
+//   - Requiring wheel would lock out non-admin users on systems where the
+//     owner is the only user and has not joined wheel.
+//   - AUTH_SELF ensures a password prompt on every deployment, preventing
+//     silent background updates and requiring explicit consent.
+//
+// Security tradeoff: A compromised local account can deploy OS images after
+// entering the account password. If multi-user security is required, add
+// subject.isInGroup("wheel") to this rule and ensure the owner is in wheel.
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") == "/usr/local/bin/shani-deploy" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── VPN connections ───────────────────────────────────────────────────────────
+// Users can activate and deactivate their own VPN connections.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.NetworkManager.vpn.connect" ||
+         action.id == "org.freedesktop.NetworkManager.vpn.disconnect") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.NetworkManager.vpn.admin" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Location services (GeoClue2) ──────────────────────────────────────────────
+// Required for maps, weather, and any app using geolocation.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.GeoClue2.trigger" ||
+         action.id == "org.freedesktop.GeoClue2.accuracy-level") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── GNOME Online Accounts ─────────────────────────────────────────────────────
+// Required for Google, Nextcloud, and other online account integration.
+
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.gnome.goa.") == 0 &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── GNOME Settings daemon ─────────────────────────────────────────────────────
+// Required for night light, power settings, and peripheral configuration.
+
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.gnome.settings-daemon.") == 0 &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Accessibility bus (AT-SPI) ────────────────────────────────────────────────
+// Required for screen readers, on-screen keyboards, and assistive tools.
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.a11y.Bus" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Avahi / mDNS-SD ──────────────────────────────────────────────────────────
+// Required for local network discovery (printers, Chromecast, AirPlay, etc.).
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.Avahi.SetHostName" ||
+         action.id == "org.freedesktop.Avahi.SetDomainName") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Smart card / PCSC ─────────────────────────────────────────────────────────
+// Required for hardware tokens, YubiKey, and smart card authentication.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.debian.pcsc-lite.access_pcsc" ||
+         action.id == "org.debian.pcsc-lite.access_card") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Waydroid ──────────────────────────────────────────────────────────────────
+// Required for starting and managing the Android container.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "id.waydroid.container.start" ||
+         action.id == "id.waydroid.container.stop" ||
+         action.id == "id.waydroid.container.freeze" ||
+         action.id == "id.waydroid.container.unfreeze") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── GDM / display manager ─────────────────────────────────────────────────────
+// Required for fast user switching between seats.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.display-manager.switch-to-greeter" ||
+         action.id == "org.freedesktop.display-manager.switch-to-user" ||
+         action.id == "org.freedesktop.display-manager.switch-to-guest") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── TPM2 — user operations ────────────────────────────────────────────────────
+// Required for FIDO2/WebAuthn and credential sealing without wheel.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.tpm2.generate-key" ||
+         action.id == "org.freedesktop.tpm2.use-key") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── KDE Powerdevil ────────────────────────────────────────────────────────────
+// Brightness, keyboard backlight, suspend, hibernate, discrete GPU toggle.
+// These mirror what login1/upower already allow — KDE routes through its own
+// helper rather than directly to those interfaces.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.kde.powerdevil.backlighthelper.set" ||
+         action.id == "org.kde.powerdevil.backlighthelper.setkeyboard" ||
+         action.id == "org.kde.powerdevil.suspendsession.suspendtoram" ||
+         action.id == "org.kde.powerdevil.suspendsession.suspendtodisk" ||
+         action.id == "org.kde.powerdevil.discretegpuhelper.setrequested") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── KDE display power management (kscreen) ────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.kde.kscreen.dpms" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── KDE clock settings ────────────────────────────────────────────────────────
+// KDE System Settings routes time/date changes through its own KAuth helper.
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.kde.kcontrol.kcmclock.save" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── KDE font installer ────────────────────────────────────────────────────────
+// Allows installing system-wide fonts from KDE Font Management without wheel.
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.kde.fontinst.manage" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── KDE Plasma package manager ────────────────────────────────────────────────
+// Allows installing global themes and widgets from KDE Store without wheel.
+
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.kde.plasma.kpackage.") == 0 &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── XFCE power manager ────────────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id.indexOf("org.xfce.power.") == 0 &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── Thunderbolt — split authorize vs enroll ───────────────────────────────────
+// authorize: current-session trust (user plugs in their own device) → Tier 1
+// enroll:    permanent trust written to policy → stays wheel
+// manage:    policy administration → stays wheel
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.bolt.authorize" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── udisks2 — take ownership of filesystem ───────────────────────────────────
+// Needed when a user formats a drive and wants to own the resulting filesystem.
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.udisks2.filesystem-take-ownership" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── udisks2 — ATA smart enable/disable ───────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.udisks2.ata-smart-enable-disable" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── NetworkManager — global DNS override ─────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.NetworkManager.settings.modify.global-dns" &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── CUPS — read server settings ───────────────────────────────────────────────
+// Allows print management UIs to read CUPS server configuration.
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.cups.cupsd.server.get" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.YES;
+    }
+});
+
+// ── login1 — seat device attachment ──────────────────────────────────────────
+// Required for multi-seat setups and hotplug device assignment.
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.login1.attach-device" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Removable/external drive formatting and ISO writing ───────────────────────
+// Any local user can format, partition, repair, and write ISOs to removable
+// drives (USB sticks, external HDDs, SD cards) with their own password.
+// Scoped to removable devices only via the udisks2 'drive-removable' hint —
+// internal system drives are excluded and remain wheel-only below.
+// open-device-system is included because some tools flag a USB as a system
+// device after it has been used as a boot drive — ISO writers still need access.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.udisks2.format-device" ||
+         action.id == "org.freedesktop.udisks2.modify-device" ||
+         action.id == "org.freedesktop.udisks2.open-device" ||
+         action.id == "org.freedesktop.udisks2.open-device-system" ||
+         action.id == "org.freedesktop.udisks2.partition-create" ||
+         action.id == "org.freedesktop.udisks2.partition-modify" ||
+         action.id == "org.freedesktop.udisks2.partition-delete" ||
+         action.id == "org.freedesktop.udisks2.filesystem-create" ||
+         action.id == "org.freedesktop.udisks2.filesystem-check" ||
+         action.id == "org.freedesktop.udisks2.filesystem-repair") &&
+        subject.active == true && subject.local == true &&
+        action.lookup("drive-removable") == "true") {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// TIER 2 — wheel group + active local session
+// ═════════════════════════════════════════════════════════════════════════════
+
+// ── gen-efi (admin only) ──────────────────────────────────────────────────────
+
+// gen-efi is never called by shani-update. shani-deploy invokes it via chroot
+// as already-root (no polkit involved). This rule only matters for direct
+// manual invocation by an administrator.
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") == "/usr/local/bin/gen-efi" &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── shani-reset (factory reset — wheel + admin credential) ────────────────────
+
+// Factory reset wipes all persistent state in /data — this is irreversible.
+// Requires wheel membership AND an administrator credential (AUTH_ADMIN) to
+// prevent accidental or unprivileged reset. The script itself requires typing
+// 'reset' as a confirmation, but polkit is the first gate.
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.policykit.exec" &&
+        action.lookup("program") == "/usr/local/bin/shani-reset" &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_ADMIN;
+    }
+});
+
+// ── Disk — destructive and structural operations ──────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.udisks2.open-device" ||
+         action.id == "org.freedesktop.udisks2.modify-device" ||
+         action.id == "org.freedesktop.udisks2.format-device" ||
+         action.id == "org.freedesktop.udisks2.open-device-system" ||
+         action.id == "org.freedesktop.udisks2.modify-device-system" ||
+         action.id == "org.freedesktop.udisks2.format-device-system" ||
+         action.id == "org.freedesktop.udisks2.rescan" ||
+         action.id == "org.freedesktop.udisks2.partition-create" ||
+         action.id == "org.freedesktop.udisks2.partition-modify" ||
+         action.id == "org.freedesktop.udisks2.partition-delete" ||
+         action.id == "org.freedesktop.udisks2.filesystem-create" ||
+         action.id == "org.freedesktop.udisks2.filesystem-check" ||
+         action.id == "org.freedesktop.udisks2.filesystem-repair" ||
+         action.id == "org.freedesktop.udisks2.loop-delete-others" ||
+         action.id == "org.freedesktop.udisks2.encrypted-change-passphrase" ||
+         action.id == "org.freedesktop.udisks2.encrypted-change-passphrase-system" ||
+         action.id == "org.freedesktop.udisks2.manage-md-devices") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Network — system-wide modifications ───────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.NetworkManager.settings.modify.system" ||
+         action.id == "org.freedesktop.NetworkManager.settings.modify.hostname" ||
+         action.id == "org.freedesktop.NetworkManager.wifi.share.open" ||
+         action.id == "org.freedesktop.NetworkManager.wifi.share.protected" ||
+         action.id == "org.freedesktop.NetworkManager.wifi.change-encrypted-wifi-config") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Hostname ──────────────────────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.hostname1.set-hostname" ||
+         action.id == "org.freedesktop.hostname1.set-static-hostname") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── DNS configuration ─────────────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.resolve1.set-dns-servers" ||
+         action.id == "org.freedesktop.resolve1.set-domains" ||
+         action.id == "org.freedesktop.resolve1.set-default-route" ||
+         action.id == "org.freedesktop.resolve1.set-llmnr" ||
+         action.id == "org.freedesktop.resolve1.set-mdns" ||
+         action.id == "org.freedesktop.resolve1.set-dnssec") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Firmware updates (fwupd) ──────────────────────────────────────────────────
+// No wheel required — any local user can update their own device firmware.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.fwupd.update-internal" ||
+         action.id == "org.freedesktop.fwupd.update-internal-trusted" ||
+         action.id == "org.freedesktop.fwupd.update-hotplug" ||
+         action.id == "org.freedesktop.fwupd.update-hotplug-trusted" ||
+         action.id == "org.freedesktop.fwupd.device-unlock" ||
+         action.id == "org.freedesktop.fwupd.verify-update") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Flatpak — install, uninstall, override ────────────────────────────────────
+// No wheel required — any local user can manage system Flatpak installations.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.Flatpak.app-install" ||
+         action.id == "org.freedesktop.Flatpak.runtime-install" ||
+         action.id == "org.freedesktop.Flatpak.app-uninstall" ||
+         action.id == "org.freedesktop.Flatpak.override" ||
+         action.id == "org.freedesktop.Flatpak.manage-system-installations") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Snap package management ───────────────────────────────────────────────────
+// No wheel required — any local user can install and manage snaps.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "io.snapcraft.snapd.manage" ||
+         action.id == "io.snapcraft.snapd.login" ||
+         action.id == "io.snapcraft.snapd.may-use-classic-confinement") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── PackageKit (GUI package management) ───────────────────────────────────────
+// No wheel required — any local user can install, remove, and update packages.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.packagekit.package-install" ||
+         action.id == "org.freedesktop.packagekit.package-remove" ||
+         action.id == "org.freedesktop.packagekit.system-update" ||
+         action.id == "org.freedesktop.packagekit.repo-enable" ||
+         action.id == "org.freedesktop.packagekit.trigger-offline-update" ||
+         action.id == "org.freedesktop.packagekit.cancel-offline-update" ||
+         action.id == "org.freedesktop.packagekit.upgrade-system") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Firewall — write operations ───────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.fedoraproject.FirewallD1.all" ||
+         action.id == "org.fedoraproject.FirewallD1.config" ||
+         action.id == "org.fedoraproject.FirewallD1.direct" ||
+         action.id == "org.fedoraproject.FirewallD1.ipset" ||
+         action.id == "org.fedoraproject.FirewallD1.zone") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── USB device policy — write operations ──────────────────────────────────────
+
 polkit.addRule(function(action, subject) {
     if ((action.id == "org.usbguard.Policy1.listRules" ||
          action.id == "org.usbguard.Policy1.appendRule" ||
          action.id == "org.usbguard.Policy1.removeRule" ||
          action.id == "org.usbguard.Devices1.applyDevicePolicy" ||
-         action.id == "org.usbguard.Devices1.listDevices" ||
-         action.id == "org.usbguard1.getParameter" ||
          action.id == "org.usbguard1.setParameter") &&
         subject.active == true && subject.local == true &&
         subject.isInGroup("wheel")) {
-            return polkit.Result.YES;
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Thunderbolt / USB4 — permanent enrollment and policy management ───────────
+// authorize (session-only trust) is Tier 1 above.
+// enroll and manage write permanent policy — wheel required.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.bolt.enroll" ||
+         action.id == "org.freedesktop.bolt.manage") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Fingerprint — enroll and delete ──────────────────────────────────────────
+// No wheel required — users manage their own fingerprints.
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "net.reactivated.fprint.device.enroll" ||
+         action.id == "net.reactivated.fprint.device.delete") &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Virtual machine management (libvirt) ──────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.libvirt.unix.manage" ||
+         action.id == "org.libvirt.unix.manage-checkpoints" ||
+         action.id == "org.libvirt.unix.manage-backups") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Container and machine management (systemd-machined / nspawn) ──────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.machine1.manage-machines" ||
+         action.id == "org.freedesktop.machine1.manage-images" ||
+         action.id == "org.freedesktop.machine1.create-special-char-device" ||
+         action.id == "org.freedesktop.machine1.open-shell" ||
+         action.id == "org.freedesktop.machine1.bind-mount" ||
+         action.id == "org.freedesktop.machine1.host") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Systemd unit management ───────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.systemd1.manage-units" ||
+         action.id == "org.freedesktop.systemd1.manage-unit-files" ||
+         action.id == "org.freedesktop.systemd1.reload-daemon") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Portable services ─────────────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.portable1.attach-images" ||
+         action.id == "org.freedesktop.portable1.detach-images" ||
+         action.id == "org.freedesktop.portable1.manage-images") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Mobile broadband direct control ──────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.ModemManager1.Device.Control" ||
+         action.id == "org.freedesktop.ModemManager1.Firmware" ||
+         action.id == "org.freedesktop.ModemManager1.Sim") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── NFC tag write ─────────────────────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.neard.Tag.Write" &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── User own password ─────────────────────────────────────────────────────────
+// Any local user can change their own password without wheel membership.
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.accounts.change-own-password" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── User account administration ───────────────────────────────────────────────
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.freedesktop.accounts.user-administration" &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ── Remote login helper ───────────────────────────────────────────────────────
+// No wheel required — needed for GNOME Settings remote login panel to work.
+
+polkit.addRule(function(action, subject) {
+    if (action.id == "org.gnome.controlcenter.remote-login-helper" &&
+        subject.active == true && subject.local == true) {
+            return polkit.Result.AUTH_SELF;
+    }
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// TIER 2 — wheel group, AUTH_ADMIN
+// Irreversible destructive operations — administrator credential required
+// ═════════════════════════════════════════════════════════════════════════════
+
+polkit.addRule(function(action, subject) {
+    if ((action.id == "org.freedesktop.udisks2.ata-secure-erase" ||
+         action.id == "org.freedesktop.udisks2.ata-enhanced-secure-erase") &&
+        subject.active == true && subject.local == true &&
+        subject.isInGroup("wheel")) {
+            return polkit.Result.AUTH_ADMIN;
     }
 });
