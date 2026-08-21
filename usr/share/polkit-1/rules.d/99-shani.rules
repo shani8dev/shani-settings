@@ -714,8 +714,11 @@ polkit.addRule(function(action, subject) {
 });
 
 // ── Flatpak — install, uninstall, override ────────────────────────────────────
-// No wheel required — any local user can manage system Flatpak installations.
-// Passwordless, matching the update rule in Tier 1 above.
+// No wheel required — any local user can manage system Flatpak installations —
+// but unlike plain updates (Tier 1, passwordless, above), these can introduce
+// new software or rewrite an already-installed app's sandbox permissions
+// (.override), so they require the user's own password, matching the
+// equivalent PackageKit and Snap actions below rather than being passwordless.
 
 polkit.addRule(function(action, subject) {
     if ((action.id == "org.freedesktop.Flatpak.app-install" ||
@@ -724,7 +727,7 @@ polkit.addRule(function(action, subject) {
          action.id == "org.freedesktop.Flatpak.override" ||
          action.id == "org.freedesktop.Flatpak.manage-system-installations") &&
         subject.active == true && subject.local == true) {
-            return polkit.Result.YES;
+            return polkit.Result.AUTH_SELF;
     }
 });
 
