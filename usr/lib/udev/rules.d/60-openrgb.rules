@@ -299,9 +299,9 @@ SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="1b1c", ATTRS{idProduct}=="0c09", TAG
 #---------------------------------------------------------------#
 # Corsair Hydro - DetectCorsairHydroControllers
 #---------------------------------------------------------------#
-SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="1b1c", ATTRS{idProduct}=="x0c12", TAG+="uaccess", TAG+="Corsair_Hydro_Series"
-SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="1b1c", ATTRS{idProduct}=="x0c13", TAG+="uaccess", TAG+="Corsair_Hydro_Series"
-SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="1b1c", ATTRS{idProduct}=="x0c15", TAG+="uaccess", TAG+="Corsair_Hydro_Series"
+SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="1b1c", ATTRS{idProduct}=="0c12", TAG+="uaccess", TAG+="Corsair_Hydro_Series"
+SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="1b1c", ATTRS{idProduct}=="0c13", TAG+="uaccess", TAG+="Corsair_Hydro_Series"
+SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="1b1c", ATTRS{idProduct}=="0c15", TAG+="uaccess", TAG+="Corsair_Hydro_Series"
 #---------------------------------------------------------------#
 # Corsair Hydro Platinum - DetectCorsairHydroPlatinumControllers
 #---------------------------------------------------------------#
@@ -754,7 +754,7 @@ SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c081", TAG
 SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c086", TAG+="uaccess", TAG+="Logitech_G903_Wireless_Gaming_Mouse_wired"
 SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c091", TAG+="uaccess", TAG+="Logitech_G903_Hero_Wireless_Gaming_Mouse_wired"
 SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="c088", TAG+="uaccess", TAG+="Logitech_G_Pro_Wireless_Gaming_Mouse_wired"
-SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="0x0a5c", TAG+="uaccess", TAG+="Logitech_G633_Gaming_Headset"
+SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="0a5c", TAG+="uaccess", TAG+="Logitech_G633_Gaming_Headset"
 SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="0ab5", TAG+="uaccess", TAG+="Logitech_G733_Gaming_Headset"
 SUBSYSTEMS=="usb|hidraw", ATTRS{idVendor}=="046d", ATTRS{idProduct}=="0a87", TAG+="uaccess", TAG+="Logitech_G935_Gaming_Headset"
 #---------------------------------------------------------------#

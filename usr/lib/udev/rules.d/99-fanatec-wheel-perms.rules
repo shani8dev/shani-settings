@@ -8,7 +8,7 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="0eb7", MODE="0666"
 GOTO="fanatec_end"
 
 LABEL="ftec_module_settings"
-RUN+="/bin/sh -c 'cd %S%p; chmod 666 range display load rumble leds/*/brightness tuning_menu/*"
+RUN+="/bin/sh -c 'cd %S%p; chmod 666 range display load rumble leds/*/brightness tuning_menu/*'"
 GOTO="fanatec_end"
 
 LABEL="ftec_input_settings"
