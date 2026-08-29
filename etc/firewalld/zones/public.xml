@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- firewalld public zone for ShaniOS — ships via shani-settings, so it
+     reaches every profile that depends on shani-settings (gnome, plasma,
+     cosmic, kiosk — confirmed via each profile's package-list.txt) with
+     one file, no per-profile duplication. `server` does NOT depend on
+     shani-settings at all and has its own distinct, more permissive-for-
+     SSH zone at image_profiles/server/overlay/rootfs/etc/firewalld/zones/public.xml
+     in the shani-install-media repo — that's a deliberate override for a
+     profile with genuinely different needs, not something this file
+     should try to also satisfy. This one is intentionally the opposite
+     default: deny all unsolicited inbound, same posture Fedora Workstation
+     ships with, chosen specifically because it does not change normal
+     desktop usage — every ordinary desktop workflow (browsing, gaming,
+     video calls, package management, cloud sync) is outbound-initiated and
+     unaffected by an inbound-default-deny zone. A user who wants to share
+     files/print/etc. over the local network adds the specific service via
+     the firewalld add service permanent command (or their desktop
+     environment's own sharing-settings UI, which drives the same
+     firewalld API) — this zone is the safe starting point, not a ceiling.
+     Note this also applies to `kiosk`, which previously had no zone
+     override of its own and ran on firewalld's stock upstream default
+     (which includes ssh) — if kiosk's public-terminal use case ever needs
+     something more locked-down than this, it should get its own override
+     in its own profile overlay, not a special case bolted onto this file. -->
+<zone>
+  <short>Public</short>
+  <description>ShaniOS desktop — public zone. All unsolicited inbound traffic rejected by default; add services explicitly (e.g. via GNOME/KDE sharing settings) if you want to expose one.</description>
+  <!-- mDNS: local-network service discovery (printers, Chromecasts, other
+       Shanios machines, etc.) — inbound multicast only, not a general
+       listening service; matches Fedora Workstation's default. -->
+  <service name="mdns"/>
+  <!-- DHCPv6 client: needed for IPv6 address assignment on networks that use it. -->
+  <service name="dhcpv6-client"/>
+  <!-- Everything else inbound is rejected (not silently dropped) — a
+       rejected connection tells the initiator immediately (ICMP
+       port-unreachable / TCP RST) instead of hanging, which matches how a
+       real "nothing is listening here" host behaves and avoids the
+       diagnostic confusion a silent drop causes. -->
+</zone>

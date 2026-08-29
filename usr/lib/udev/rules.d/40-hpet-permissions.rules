@@ -1,3 +1,13 @@
-# Hpet permissions
+# Hpet permissions for low-latency pro-audio use.
+# The `realtime` group is created by shani-multimedia's realtime-privileges
+# dependency, not by this package — on a profile that installs
+# shani-settings without shani-multimedia (currently: kiosk), udevadm
+# resolves this GROUP= at rule-load time, fails to find it, and leaves
+# rtc0/hpet root-owned instead — a silent no-op, not a load failure, and
+# harmless there since a locked-down kiosk terminal has no pro-audio use
+# case anyway. If a future profile needs both real-time audio and
+# shani-settings without shani-multimedia, create the `realtime` group
+# there instead of loosening this rule's GROUP= to something that always
+# resolves.
 KERNEL=="rtc0", GROUP="realtime"
 KERNEL=="hpet", GROUP="realtime"

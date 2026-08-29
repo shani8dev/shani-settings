@@ -1,2 +1,17 @@
-#Enable user access to keyboard using uinput event generator
+# Enable user access to /dev/uinput (synthetic keyboard/mouse/gamepad event
+# injection) for AntiMicroX and similar remapping tools.
+#
+# RISK NOTE (part of this repo's Tier 1 trust model — see the header comment
+# in usr/share/polkit-1/rules.d/99-shani.rules and the "Polkit trust model"
+# section of README.md): TAG+="uaccess" grants uinput to *any* active local
+# session via systemd-logind ACLs, with no group membership required — the
+# same trust boundary Tier 1 polkit rules use ("any active local session, no
+# group required"). A process running in that session can therefore
+# synthesize arbitrary input system-wide (e.g. keystrokes into another
+# window), which is a meaningfully more powerful primitive than the
+# passwordless polkit actions it sits alongside. This is accepted as part of
+# the same deliberate convenience-vs-risk tradeoff as Tier 1 — gating it
+# behind a dedicated group instead would require corresponding user/group
+# provisioning in shani-pkgbuilds/shani-settings' install hooks (like the
+# sambashare group), which is out of scope for this repo alone.
 SUBSYSTEM=="misc", KERNEL=="uinput", OPTIONS+="static_node=uinput", TAG+="uaccess"

@@ -19,6 +19,14 @@
 // If the system has no wheel group, Tier 1 covers everything a normal
 // user needs. Tier 2 operations simply remain unavailable until a wheel
 // group is provisioned and the user is added to it.
+//
+// Related non-polkit grant at the same Tier 1 trust boundary: udev rule
+// usr/lib/udev/rules.d/60-antimicrox-uinput.rules gives any active local
+// session uaccess to /dev/uinput (synthetic input injection) via
+// systemd-logind ACLs, not polkit — see that file's own comment for the
+// risk rationale. It's called out here because it's part of the same
+// "any active local session, no group required" tradeoff this file
+// documents.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -37,7 +45,6 @@ polkit.addRule(function(action, subject) {
          action.id == "org.freedesktop.login1.suspend" ||
          action.id == "org.freedesktop.login1.suspend-multiple-sessions" ||
          action.id == "org.freedesktop.login1.lock-sessions" ||
-         action.id == "org.freedesktop.login1.set-user-linger" ||
          action.id == "org.freedesktop.login1.set-reboot-to-firmware-setup" ||
          action.id == "org.freedesktop.login1.set-reboot-to-boot-loader-menu" ||
          action.id == "org.freedesktop.upower.suspend" ||

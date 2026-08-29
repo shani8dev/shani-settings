@@ -1,6 +1,6 @@
 # shani-settings
 
-Default system configuration for Shani OS — a filesystem overlay of `/etc` and `/usr` files that ship on every image. This repo has no build step of its own: its `etc/` and `usr/` trees are packaged verbatim by [`shani-pkgbuilds/shani-settings`](https://github.com/shani8dev/shani-pkgbuilds/tree/main/shani-settings), whose `PKGBUILD` copies them straight onto the package root, so a path here (e.g. `etc/samba/smb.conf`) lands at that same path on the live system (`/etc/samba/smb.conf`) when the package installs or upgrades.
+Default system configuration for Shanios — a filesystem overlay of `/etc` and `/usr` files that ship on every image. This repo has no build step of its own: its `etc/` and `usr/` trees are packaged verbatim by [`shani-pkgbuilds/shani-settings`](https://github.com/shani8dev/shani-pkgbuilds/tree/main/shani-settings), whose `PKGBUILD` copies them straight onto the package root, so a path here (e.g. `etc/samba/smb.conf`) lands at that same path on the live system (`/etc/samba/smb.conf`) when the package installs or upgrades.
 
 ## What's in here
 
@@ -35,3 +35,34 @@ Permissions that git can't preserve (sudoers.d at `0440`, polkit rules.d at `075
 - **Tier 2 — `wheel` group + active local session.** Destructive or system-structural operations only, gated by `AUTH_SELF` (disk formatting, hostname changes) or `AUTH_ADMIN` for anything irreversible.
 
 The tradeoff behind Tier 1 is explicit in the rules themselves: it weighs the convenience of a group-optional desktop against the risk that a compromised (but non-wheel) local account can still reach real system actions, and accepts that risk deliberately rather than by omission. If you're changing what a given action requires, read the relevant rule's inline comment first — the tiering is intentional, not uniform by accident.
+
+The same Tier 1 boundary ("any active local session, no group required") also covers one grant outside polkit entirely: `usr/lib/udev/rules.d/60-antimicrox-uinput.rules` gives any active local session `uaccess` to `/dev/uinput` (synthetic keyboard/mouse/gamepad input injection) via systemd-logind ACLs. It's a materially more powerful primitive than the passwordless polkit actions it sits alongside, and is accepted as part of the same deliberate tradeoff — see that file's own comment for the rationale.
+
+## Testing changes locally
+
+Build and install the package from [`shani-pkgbuilds`](https://github.com/shani8dev/shani-pkgbuilds) against your working copy of this repo:
+
+```bash
+git clone https://github.com/shani8dev/shani-pkgbuilds
+cd shani-pkgbuilds/shani-settings
+# point source= at your local checkout or fork branch, then:
+makepkg -si          # build and install locally
+pacman -Ql shani-settings   # verify file placement
+```
+
+For full-image verification (config as it lands on real installs), build a test image with [`shani-install-media`](https://github.com/shani8dev/shani-install-media) and run its `test cycle`, which installs, boots, updates, and rolls back on loop-mounted disks.
+
+## Contributing
+
+- Config changes must be justified by their inline comments — this repo ships security-relevant defaults (sudoers, polkit, audit rules); unexplained loosening will not be merged.
+- Anything under `etc/skel/` affects every **new** user account; existing homes are never modified by package upgrades.
+- If a change requires a new enabled service, update `shani-settings.install` hooks in the same PR.
+- Test with `makepkg -si` plus at least one reboot before opening a PR.
+
+## Relationship to Other Projects
+
+| Project | Role |
+|---|---|
+| [shani-pkgbuilds](https://github.com/shani8dev/shani-pkgbuilds) | Packages these files as `shani-settings` |
+| [shani-install-media](https://github.com/shani8dev/shani-install-media) | Bakes the package into OS images/ISOs |
+| [shani-builder](https://github.com/shani8dev/shani-builder) | Docker environment for the above |
