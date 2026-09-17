@@ -199,3 +199,70 @@ established this rule.
 
 `README.md` explains the `etc/`/`usr/` → live-filesystem mapping and how
 `shani-pkgbuilds/shani-settings`'s PKGBUILD packages this repo verbatim.
+
+## Garuda Cross-Reference Findings (added 2026-09-17)
+
+Based on a full scan of 29 garuda-linux repos mapped against shani (see `../garuda-catalog.md` — 29 repos, not 34; several user-listed names don't exist). See `../garuda-mapping-analysis.md` and `../deep-analysis.md` for full details. garuda-settings-manager is the most directly comparable repo — both manage system settings (note: garuda-settings-manager is a Qt5/KF5 KCM GUI app, not a config-file overlay like this repo).
+
+### 🟡 HIGH: CI/CD gap (shared across ALL repos)
+
+1. **Shared CI templates** (estimated 2-3 days, affects ALL repos).
+   - Garuda's `gitlab-ci-commons` provides reusable templates (commitizen, flake-check, pre-commit, tag-to-release). Each repo `include:`s from it.
+   - Shani repos run on GitHub Actions (no `.gitlab-ci.yml` anywhere) — 8 repos (blog, builder, docs, fleet, insights, install-media, pkgbuilds, platform) carry hand-written `.github/workflows/*.yml` with duplicated patterns.
+   - **Action**: Create `shani-ci-commons` (GitHub Actions reusable workflows / composite actions) with templates for lint, test, build, security scan. Each repo references them via `uses: shani8dev/shani-ci-commons/...` instead of copy-pasting.
+   - **Affects**: All 15 shani repos.
+
+### 🟡 HIGH: Dependency management gap
+
+2. **Add automated dependency updates** (estimated 4 hours, affects ALL repos).
+   - Garuda uses `renovate-runner` running hourly against all repos with `renovate.json` files.
+   - Shani repos have no automated dependency updating.
+   - **Action**: Set up Renovate (self-hosted or gitlab.com) with a fleet-wide config. Each repo adds a minimal `renovate.json`.
+
+### 🟢 MEDIUM: Code quality
+
+3. **Conventional commit enforcement** (estimated 2 hours, affects ALL repos).
+   - Every garuda repo has a `[commitizen]` badge; `cz commit` is enforced.
+   - Shani repos have no commit message standardization.
+
+### 🟡 Cross-repo: Centralized config
+
+4. **Centralized config for deploy/build tools** (estimated 1-2 days).
+   - Garuda uses a layered config system: `/etc/garuda-tools/garuda-tools.conf` (system-wide) + `~/.config/garuda-tools/garuda-tools.conf` (user override). Config defines build targets, chroot dirs, cache dirs, mirrors.
+   - Shani scripts hardcode paths or use env vars — no equivalent centralized config.
+   - **Action**: Create `/etc/shani/shani.conf` (or similar) with DEPLOY_CHANNEL, BUILD_MIRROR, ISO_CACHE_DIR, BUILD_DIR. Follow the user-override pattern. See `shani-deploy/AGENTS.md` for the same finding.
+
+### 🔍 Re-Scan Findings (2026-09-17)
+
+Re-scan against `../garuda-catalog.md` (29 repos, not 34). **Confirmed mapping: garuda-settings-manager** ✅ (exists) — but it is a **Qt5/KF5 KCM-module GUI app** (KDE settings manager using KF5::Auth for privilege escalation), not a config-file overlay like this repo. The closer structural counterpart for a static `/etc`+`/usr` overlay is **garuda-setup-assistant** ✅ (installs to `etc/`/`usr/` layout, i18n translations, Qt wizard pages).
+
+**New gaps** (garuda has, shani-settings lacks):
+
+1. **First-run setup wizard** — garuda-setup-assistant is a first-run wizard (Calamares post-install) with Qt pages + Transifex i18n; shani has no first-run wizard (os-installer-config's `configure.sh` is CLI-only).
+2. **Translation infrastructure** — garuda-setup-assistant/garuda-system-maintenance use Transifex (`transifex.yml`) + i18n dirs; shani-settings has no i18n.
+3. **Maintenance notifications** — garuda-system-maintenance ships `.notifyrc` desktop notifications + systemd rules; shani has no maintenance-notification mechanism.
+4. **Layered config** — garuda-tools' `/etc/garuda-tools/garuda-tools.conf` + `~/.config/` user-override pattern; shani-settings has no layered config (already noted above).
+
+**Shani advantages** (shani-settings has, garuda lacks):
+
+- Per-service validators (`testparm`, `visudo -c`, `systemd-analyze verify`, `udevadm verify`) — garuda has no config-validation tooling
+- Tier 1/2 risk framing for privilege-granting defaults (documented security posture)
+- Profile-aware defaults (server override pattern; garuda-setup-assistant is per-flavor but not security-framed)
+
+**Qt GUI gap note**: the comparable garuda repos are GUI apps (garuda-settings-manager Qt5/KF5, garuda-setup-assistant Qt) while shani-settings is a static overlay — garuda's 12 Qt GUI apps have no shani counterpart beyond shani-gui.
+
+### 📋 Implementation Roadmap (2026-09-17)
+
+Implementation priorities are per `../IMPLEMENTATION-ROADMAP.md` (master roadmap for the whole shani ecosystem).
+
+shani-settings already has what garuda's comparable repos lack: per-service validators (`testparm`, `visudo -c`, `systemd-analyze verify`, `udevadm verify`), a documented Tier 1/2 risk framing for privilege-granting defaults, and profile-aware defaults. The items below wire those strengths into automation rather than porting garuda's Qt GUI apps (garuda-settings-manager is Qt5/KF5 KCM modules — not relevant to a static `/etc`+`/usr` overlay).
+
+1. **Per-Config Validator Integration** (P2, half day) — The validators exist but nothing runs them automatically. Add `tests/validate-configs.sh` calling `testparm -s`, `visudo -c -f`, `systemd-analyze verify`, and `udevadm verify` against the real files, then wire it into pre-commit and CI so a bad config can't ship (roadmap #24).
+
+2. **Automated checksum-sync check with shani-pkgbuilds** (P0/P1, half day) — `shani-pkgbuilds/shani-settings/PKGBUILD` packages this repo's trees verbatim, checksummed; any change here requires a checksum bump there or the packaged artifact silently ships stale content. Nothing checks this automatically. Add a pre-commit/CI check comparing this repo's file checksums against the PKGBUILD's `sha256sums=()` and fail on mismatch (same pattern as roadmap #6 for shani-keyring).
+
+3. **CI workflows** (P1, 1-2 days) — No CI and no pre-commit hooks exist. Add a workflow running `tests/validate-configs.sh` on every push, using the shared `shani-ci-commons` templates once they exist (roadmap #7).
+
+4. **LICENSE file** — ✅ DONE (2026-09-17, audit-verified): the repo now tracks a GPL-3.0 LICENSE at repo root (matching the ecosystem standard); the original master-roadmap #31 gap is closed.
+
+5. **Conventional commits + renovate.json** (P1, ~1 hour) — Add commitizen config and a minimal `renovate.json` (roadmap #8-9). Note: this is a config-only repo with no dependency tree, so Renovate's value here is minimal — the commitizen half is the useful part.
