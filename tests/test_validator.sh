@@ -40,8 +40,29 @@ else
     exit 1
 fi
 
-# Test 3: Nonexistent file fails
-echo "Test 3: Nonexistent file fails..."
+# Test 3: Bad numeric values fail
+cat > "$TMPDIR/badvalues.conf" << 'CONF'
+[network]
+hostname = shani
+
+[security]
+encryption = true
+
+[services]
+enabled = ssh
+memory_limit = 0
+CONF
+
+echo "Test 3: Bad numeric values fail validation..."
+if ! "$VALIDATOR" "$TMPDIR/badvalues.conf" 2>/dev/null; then
+    echo "  PASS"
+else
+    echo "  FAIL"
+    exit 1
+fi
+
+# Test 4: Nonexistent file fails
+echo "Test 4: Nonexistent file fails..."
 if ! "$VALIDATOR" "/nonexistent.conf" 2>/dev/null; then
     echo "  PASS"
 else
