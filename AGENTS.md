@@ -30,17 +30,33 @@ easy to get subtly wrong (indentation-sensitive stanzas, deprecated
 directives, boolean spelling). Use each service's own validator:
 
 ```bash
-testparm -s etc/samba/smb.conf                       # Samba
-visudo -c -f etc/sudoers.d/<file>                     # sudoers fragments, if any
-systemd-analyze verify usr/lib/systemd/**/*.service   # systemd units
-udevadm verify usr/lib/udev/rules.d/*.rules           # udev rules (recent udev/systemd)
+testparm -s etc/samba/smb.conf                        # Samba (needs samba-common-bin)
+visudo -c -f etc/sudoers.d/<file>                      # sudoers fragments
+udevadm verify usr/lib/udev/rules.d/*.rules            # udev rules (recent udev/systemd)
 ```
 
-For polkit `.rules` files (JavaScript-based), at minimum run them through
-`node --check` or a JS linter for syntax; there's no dry-run apply
-available outside a real polkit daemon, so treat these as higher-risk and
-review the actual permission grant carefully — what looks like a narrow
-rule can resolve much more broadly than intended.
+This repo ships no `.service`/`.timer` units (confirmed:
+`find usr/lib/systemd -name '*.service' -o -name '*.timer'` is empty —
+only manager/journald `*.conf.d/*.conf` drop-ins), so `systemd-analyze
+verify` has nothing to check here; `tests/validate-configs.sh` instead does
+a `[Section]`/`Key=Value` well-formedness check on those drop-ins.
+
+For polkit `.rules` files (JavaScript-based), `node --check` needs a `.js`
+extension to recognize the file as CommonJS — copy to a temp `.js` path
+first (`cp usr/share/polkit-1/rules.d/99-shani.rules /tmp/x.js && node
+--check /tmp/x.js`); running it directly on the `.rules` path fails with
+`ERR_UNKNOWN_FILE_EXTENSION`, not a real syntax error. There's no dry-run
+apply available outside a real polkit daemon, so treat these as
+higher-risk and review the actual permission grant carefully — what looks
+like a narrow rule can resolve much more broadly than intended.
+
+**`tests/validate-configs.sh` already wires all of the above together**
+against this repo's real `etc/`/`usr/` files (not a synthetic fixture) —
+run it directly rather than reinventing the above by hand:
+```bash
+bash tests/validate-configs.sh          # validates THIS repo's real files
+bash tests/test_validator.sh            # proves the validator catches real breakage (negative controls)
+```
 
 ## Rule: think about the default, not just the syntax
 
@@ -187,6 +203,7 @@ validator against the real config.
 - **CI status.** No CI workflows, no pre-commit hooks.
 - **40-hpet-permissions.rules references a group that isn't always installed (Low, documented not fixed).** `usr/lib/udev/rules.d/40-hpet-permissions.rules` sets `GROUP="realtime"`, only created by `shani-pkgbuilds/shani-multimedia`'s `.install` — on `kiosk` (the one profile using `shani-settings` without `shani-multimedia`, confirmed via `package-list.txt`) this silently no-ops (rtc0/hpet stay root-owned), which is harmless since a locked-down kiosk terminal has no pro-audio use case. Added an explanatory comment in the rule file itself rather than changing behavior — see the file for the full reasoning on why this is left alone.
 - **udev rule syntax: missing comma before GOTO — FIXED.** `usr/lib/udev/rules.d/99-logitech-wheel-perms.rules` and `99-thrustmaster-wheel-perms.rules` — added the missing commas; re-ran `udevadm verify` and both now pass clean ("Success: 2, Fail: 0").
+- **`tests/validate-configs.sh` validated a fictional config format, not this repo's real files — FIXED (2026-09-18).** The version shipped by the earlier "Per-Config Validator Integration" pass (roadmap #24) parsed an invented `/etc/shani/shani.conf` with `[network]`/`[security]`/`[services]` INI sections — this repo ships **no such file** (confirmed: `find etc usr -iname '*shani.conf*'` matches only `etc/environment.d/90-shani.conf` and `usr/lib/sysctl.d/99-sysctl-shani.conf`, neither INI-sectioned). `tests/test_validator.sh` tested that same fictional format against synthetic fixtures, so CI's `validator-tests` job was green while validating nothing this repo actually ships — dead code presented as done, same pattern as other repos audited this session. Rewrote both: `validate-configs.sh` now runs `visudo -c -f` on every real `etc/sudoers.d/*` fragment, `testparm -s` on the real `etc/samba/smb.conf` (skips with a warning if `testparm` isn't installed, rather than silently "passing"), `udevadm verify` on every real `usr/lib/udev/rules.d/*.rules` file (with a narrow, explicitly-checked exemption for the known-accepted `40-hpet-permissions.rules` "Unknown group 'realtime'" warning above — any *other* failure in that same file still fails the check), `node --check` (via a temp `.js` copy) on the real polkit rules file, and a `[Section]`/`Key=Value` well-formedness check on the real `usr/lib/systemd/*.conf.d/*.conf` drop-ins (no `.service`/`.timer` units ship here, so `systemd-analyze verify` has nothing to check). `test_validator.sh` now runs the validator against this repo's real tree (must pass) plus 6 deliberately-corrupted copies — one real corruption per validated class, including the exact "missing comma before GOTO" bug class already fixed once in this repo — each proven to be caught (8/8 tests pass, live-verified). CI (`.github/workflows/ci.yml`) now installs `samba-common-bin` so `testparm` actually runs instead of perpetually skipping.
 
 ## Cross-repo impact — check before calling a fix complete
 
@@ -265,11 +282,11 @@ Implementation priorities are per `../IMPLEMENTATION-ROADMAP.md` (master roadmap
 
 shani-settings already has what garuda's comparable repos lack: per-service validators (`testparm`, `visudo -c`, `systemd-analyze verify`, `udevadm verify`), a documented Tier 1/2 risk framing for privilege-granting defaults, and profile-aware defaults. The items below wire those strengths into automation rather than porting garuda's Qt GUI apps (garuda-settings-manager is Qt5/KF5 KCM modules — not relevant to a static `/etc`+`/usr` overlay).
 
-1. **Per-Config Validator Integration** (P2, half day) — The validators exist but nothing runs them automatically. Add `tests/validate-configs.sh` calling `testparm -s`, `visudo -c -f`, `systemd-analyze verify`, and `udevadm verify` against the real files, then wire it into pre-commit and CI so a bad config can't ship (roadmap #24).
+1. **Per-Config Validator Integration** ✅ DONE (2026-09-18, corrected) — `tests/validate-configs.sh` runs `visudo -c -f`, `testparm -s`, `udevadm verify`, and a `node --check`-based JS syntax check against this repo's *real* `etc/`/`usr/` files (an earlier version validated an invented config format nobody ships — see "Audit-verified known issues" above). Wired into CI via the `validator-tests` job. Not yet wired into a local pre-commit hook.
 
 2. **Automated checksum-sync check with shani-pkgbuilds** ✅ DONE (2026-09-18) — `tests/check-checksums.sh` parses the sibling `shani-pkgbuilds/shani-settings/PKGBUILD`'s `source=()`/`sha256sums=()` (handling single- and double-quoted entries and the `name::url` tarball form) and compares each non-SKIP entry against the repo file, failing on mismatch. The PKGBUILD currently packages the repo as a release tarball with `sha256sums=('SKIP')` (authenticity delegated to the pinned `_commit`), so the script prints a SKIP notice and exits 0, with a NOTE about commit-drift staleness; if the PKGBUILD is ever converted to per-file sources with real hashes, the comparison path activates automatically (verified: match→0, mismatch→1). Wired into CI (`.github/workflows/ci.yml`, `checksum-sync` job, sibling repo checked out).
 
-3. **CI workflows** 🟡 PARTIALLY DONE (2026-09-18) — `.github/workflows/ci.yml` now exists: `validator-tests` job runs `bash tests/test_validator.sh` (exercising `validate-configs.sh` on valid/invalid configs) and `checksum-sync` job runs `tests/check-checksums.sh` against the sibling `shani-pkgbuilds` checkout. The remaining half — running `testparm`/`visudo -c -f`/`systemd-analyze verify`/`udevadm verify` against the real `etc/`+`usr/` payload (roadmap item #1) — still needs the shared `shani-ci-commons` templates (roadmap #7) or a distro-provided-validators runner, and is deferred with the rest of #7.
+3. **CI workflows** ✅ DONE (2026-09-18, corrected) — `.github/workflows/ci.yml`: `validator-tests` job installs `samba-common-bin` (for real `testparm`) and runs `bash tests/test_validator.sh`, which now exercises `validate-configs.sh` against this repo's *real* `etc/`/`usr/` payload plus deliberately-corrupted copies (not synthetic INI fixtures, see item 1 above); `checksum-sync` job runs `tests/check-checksums.sh` against the sibling `shani-pkgbuilds` checkout. A shared `shani-ci-commons` template (roadmap #7) could still replace this hand-written workflow later, but the validation coverage itself is real and complete now.
 
 4. **LICENSE file** — ✅ DONE (2026-09-17, audit-verified): the repo now tracks a GPL-3.0 LICENSE at repo root (matching the ecosystem standard); the original master-roadmap #31 gap is closed.
 
