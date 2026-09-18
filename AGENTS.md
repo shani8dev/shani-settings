@@ -134,6 +134,22 @@ validator concurrently rather than one at a time. Don't let a skill
 framework's plan-and-report output substitute for actually running each
 validator against the real config.
 
+## Boundaries
+
+- ✅ **Always**: run the config's own real validator (`testparm`, `visudo
+  -c`, `udevadm verify`, `node --check` via a temp `.js` copy) before
+  calling a change done — `tests/validate-configs.sh` already wires all of
+  these together, use it rather than reinventing.
+- ⚠️ **Ask first**: widening what an unprivileged local user or
+  unauthenticated network peer can do (a guest-access setting, a udev
+  permission grant, a polkit action) — this repo sets the default for the
+  entire fleet on day one, so that's a deliberate, documented choice, not
+  an incidental side effect.
+- 🚫 **Never**: "fix" `60-openrgb.rules`'s world-writable sysfs pattern to
+  look more locked-down — it's a verbatim, commit-tagged copy of upstream
+  OpenRGB's own rules, shipped identically by every major distro; diverging
+  creates drift with no real benefit, not a real hardening win.
+
 ## Audit-verified known issues (confirmed present)
 
 - **`map to guest = Bad Password` — FIXED.** Was: `etc/samba/smb.conf` —
@@ -200,7 +216,13 @@ validator against the real config.
   access the fallback needs. Verified with `udevadm verify` ("Success: 1,
   Fail: 0").
 - **`SigLevel = Never` reference — RESOLVED, not this repo's file anyway.** These files are in `shani-install-media/image_profiles/{kiosk,gnome,plasma}/pacman.conf`, not in this repo — and per that repo's own `AGENTS.md`, all three now read `SigLevel = Required DatabaseOptional` (verified directly: `grep -n SigLevel` on all three shows `Required DatabaseOptional`, no `Never` anywhere). This bullet was pointing at an already-fixed issue in a sibling repo; kept only as a "not our file" cross-repo note, not an open item.
-- **CI status.** No CI workflows, no pre-commit hooks.
+- **CI status — corrected, contradicted this file's own roadmap section
+  below.** `.github/workflows/ci.yml` has two jobs: `validator-tests`
+  (installs `samba-common-bin`, runs `tests/test_validator.sh` against
+  this repo's real payload) and `checksum-sync` (runs
+  `tests/check-checksums.sh` against the sibling `shani-pkgbuilds`
+  checkout) — see roadmap items 1-3 below for the full detail. No
+  pre-commit hooks yet.
 - **40-hpet-permissions.rules references a group that isn't always installed (Low, documented not fixed).** `usr/lib/udev/rules.d/40-hpet-permissions.rules` sets `GROUP="realtime"`, only created by `shani-pkgbuilds/shani-multimedia`'s `.install` — on `kiosk` (the one profile using `shani-settings` without `shani-multimedia`, confirmed via `package-list.txt`) this silently no-ops (rtc0/hpet stay root-owned), which is harmless since a locked-down kiosk terminal has no pro-audio use case. Added an explanatory comment in the rule file itself rather than changing behavior — see the file for the full reasoning on why this is left alone.
 - **udev rule syntax: missing comma before GOTO — FIXED.** `usr/lib/udev/rules.d/99-logitech-wheel-perms.rules` and `99-thrustmaster-wheel-perms.rules` — added the missing commas; re-ran `udevadm verify` and both now pass clean ("Success: 2, Fail: 0").
 - **`tests/validate-configs.sh` validated a fictional config format, not this repo's real files — FIXED (2026-09-18).** The version shipped by the earlier "Per-Config Validator Integration" pass (roadmap #24) parsed an invented `/etc/shani/shani.conf` with `[network]`/`[security]`/`[services]` INI sections — this repo ships **no such file** (confirmed: `find etc usr -iname '*shani.conf*'` matches only `etc/environment.d/90-shani.conf` and `usr/lib/sysctl.d/99-sysctl-shani.conf`, neither INI-sectioned). `tests/test_validator.sh` tested that same fictional format against synthetic fixtures, so CI's `validator-tests` job was green while validating nothing this repo actually ships — dead code presented as done, same pattern as other repos audited this session. Rewrote both: `validate-configs.sh` now runs `visudo -c -f` on every real `etc/sudoers.d/*` fragment, `testparm -s` on the real `etc/samba/smb.conf` (skips with a warning if `testparm` isn't installed, rather than silently "passing"), `udevadm verify` on every real `usr/lib/udev/rules.d/*.rules` file (with a narrow, explicitly-checked exemption for the known-accepted `40-hpet-permissions.rules` "Unknown group 'realtime'" warning above — any *other* failure in that same file still fails the check), `node --check` (via a temp `.js` copy) on the real polkit rules file, and a `[Section]`/`Key=Value` well-formedness check on the real `usr/lib/systemd/*.conf.d/*.conf` drop-ins (no `.service`/`.timer` units ship here, so `systemd-analyze verify` has nothing to check). `test_validator.sh` now runs the validator against this repo's real tree (must pass) plus 6 deliberately-corrupted copies — one real corruption per validated class, including the exact "missing comma before GOTO" bug class already fixed once in this repo — each proven to be caught (8/8 tests pass, live-verified). CI (`.github/workflows/ci.yml`) now installs `samba-common-bin` so `testparm` actually runs instead of perpetually skipping.
