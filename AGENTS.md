@@ -134,6 +134,13 @@ validator concurrently rather than one at a time. Don't let a skill
 framework's plan-and-report output substitute for actually running each
 validator against the real config.
 
+## Commit discipline
+
+Before composing a commit message, run `git log --oneline -20` (and `git
+log -5 -- <touched paths>` for the files you changed) and match the
+existing style — subject shape, scope prefixes, body detail level —
+rather than writing in a generic format.
+
 ## Boundaries
 
 - ✅ **Always**: run the config's own real validator (`testparm`, `visudo
@@ -149,6 +156,7 @@ validator against the real config.
   look more locked-down — it's a verbatim, commit-tagged copy of upstream
   OpenRGB's own rules, shipped identically by every major distro; diverging
   creates drift with no real benefit, not a real hardening win.
+- 🚫 **Never**: delete or skip a failing test to make a build/CI pass — fix the underlying code, not the test. A red test is signal; silencing it destroys the signal, not the bug.
 
 ## Audit-verified known issues (confirmed present)
 
