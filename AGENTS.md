@@ -13,6 +13,14 @@ step of its own — a path here (`etc/samba/smb.conf`) lands at that exact
 path on every real install. A wrong default here isn't a bug in one
 place, it's a default for the entire fleet on day one.
 
+## Empirical verification (mandatory)
+
+**Reading code is analysis; running code is verification.** A change is not
+verified by reading the diff, running `bash -n`, or confirming it "looks
+correct." It is verified by observing the actual behavior of the real
+thing in the real environment — built, served, deployed, signed, running.
+If you haven't seen it work (or fail) for real, it isn't verified.
+
 ## Rule: syntax-check every config with its own real validator, don't eyeball it
 
 A config file that "reads fine" and one that a real daemon will actually
