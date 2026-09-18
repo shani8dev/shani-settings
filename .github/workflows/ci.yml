@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: settings-ci
+  cancel-in-progress: false
+
+jobs:
+  validator-tests:
+    name: Config validator tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: bash -n on all tests and scripts
+        run: |
+          for script in tests/*.sh; do
+            [ -f "$script" ] && bash -n "$script"
+          done
+
+      - name: Run validator test suite
+        run: bash tests/test_validator.sh
+
+  checksum-sync:
+    name: PKGBUILD checksum sync check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Checkout sibling shani-pkgbuilds
+        uses: actions/checkout@v4
+        with:
+          repository: shani8dev/shani-pkgbuilds
+          path: shani-pkgbuilds
+
+      - name: Run check-checksums.sh against sibling PKGBUILD
+        run: |
+          # SKIP-entries ("release tarball pinned at _commit") pass with
+          # notice + exit 0; per-file hashes, if ever added, are compared.
+          bash tests/check-checksums.sh shani-pkgbuilds/shani-settings/PKGBUILD
