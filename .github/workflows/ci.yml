@@ -11,9 +11,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  lint:
+    name: Lint
+    uses: shani8dev/shani-ci-commons/.github/workflows/lint.yml@main
+    with:
+      language: bash
+
   validator-tests:
     name: Config validator tests
     runs-on: ubuntu-latest
+    needs: lint
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -50,3 +57,10 @@ jobs:
           # SKIP-entries ("release tarball pinned at _commit") pass with
           # notice + exit 0; per-file hashes, if ever added, are compared.
           bash tests/check-checksums.sh shani-pkgbuilds/shani-settings/PKGBUILD
+
+  security:
+    name: Security
+    uses: shani8dev/shani-ci-commons/.github/workflows/security.yml@main
+    with:
+      scan-type: secrets
+    needs: lint
