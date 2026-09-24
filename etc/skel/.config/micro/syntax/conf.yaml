@@ -1,7 +1,10 @@
 filetype: conf
 
 detect:
-    filename: "(\\.(conf)$|\\.(cfg)$)"
+    # *.conf/*.cfg, plus common extension-less /etc files (these used to be
+    # forced via a "/etc/*" glob in settings.json, which also overrode real
+    # syntaxes such as /etc/*.sh, *.json, *.toml)
+    filename: "(\\.(conf|cfg)$|/etc/(fstab|crypttab|hosts|hostname|environment|locale\\.gen|vconsole\\.conf|shells|subuid|subgid|issue|motd)$)"
 
 rules:
     - constant.string:

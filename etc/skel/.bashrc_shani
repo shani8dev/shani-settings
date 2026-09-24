@@ -1,48 +1,23 @@
+# ~/.bashrc - ShaniOS (installed as ~/.bashrc on first login)
 # If not running interactively, don't do anything
 [[ $- != *i* ]] && return
 
-# Load starship prompt if starship is installed
-if [ -x /usr/bin/starship ]; then
-	__main() {
-		local major="${BASH_VERSINFO[0]}"
-		local minor="${BASH_VERSINFO[1]}"
+## History: big, shared across terminals, no duplicates
+HISTSIZE=50000
+HISTFILESIZE=100000
+HISTCONTROL=ignoreboth:erasedups
+HISTTIMEFORMAT='%F %T  '
+shopt -s histappend cmdhist
 
-		if ((major > 4)) || { ((major == 4)) && ((minor >= 1)); }; then
-			source <("/usr/bin/starship" init bash --print-full-init)
-		else
-			source /dev/stdin <<<"$("/usr/bin/starship" init bash --print-full-init)"
-		fi
-	}
-	__main
-	unset -f __main
-fi
+## Behaviour
+shopt -s autocd cdspell dirspell checkwinsize globstar extglob no_empty_cmd_completion
+# key bindings and completion behaviour live in ~/.inputrc
 
-## Useful aliases
+## ShaniOS defaults: aliases, fzf, starship, zoxide, mcfly
+# (inside a Distrobox container $HOME is shared but /usr isn't: use the host's)
+for _f in /usr/share/shani/shell/common.sh /run/host/usr/share/shani/shell/common.sh; do
+    [[ -r $_f ]] && { source "$_f"; break; }
+done
+unset _f
 
-# Common use
-alias tarnow='tar -acf '
-alias untar='tar -zxvf '
-alias wget='wget -c '
-alias psmem='ps auxf | sort -nr -k 4'
-alias psmem10='ps auxf | sort -nr -k 4 | head -10'
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias .....='cd ../../../..'
-alias ......='cd ../../../../..'
-alias dir='dir --color=auto'
-alias vdir='vdir --color=auto'
-alias hw='hwinfo --short'                          # Hardware Info
-alias ip='ip -color'
-
-# Get the error messages from journalctl
-alias jctl="journalctl -p 3 -xb"
-
-# Load Mcfly
-export MCFLY_FUZZY=true
-export MCFLY_RESULTS=20
-export MCFLY_INTERFACE_VIEW=BOTTOM
-export MCFLY_RESULTS_SORT=LAST_RUN
-
-# Initialize Mcfly
-eval "$(mcfly init bash)"
+## Your own additions below

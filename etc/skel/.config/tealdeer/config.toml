@@ -1,0 +1,19 @@
+# ~/.config/tealdeer/config.toml - ShaniOS. `tldr <command>` for examples.
+# Colours are ANSI slots, so they follow the Saturn / Saturn Dark terminal scheme.
+[display]
+use_pager = false
+compact = false
+
+[updates]
+auto_update = true          # fetch pages on first use, refresh weekly
+auto_update_interval_hours = 168
+
+[style.command_name]
+foreground = "red"
+bold = true
+[style.example_code]
+foreground = "green"
+[style.example_variable]
+foreground = "yellow"
+underline = true
+[style.description]

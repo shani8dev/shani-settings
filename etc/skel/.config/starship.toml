@@ -1,146 +1,308 @@
-## FIRST LINE/ROW: Info & Status
-# First param ─┌
+# ~/.config/starship.toml - ShaniOS prompt: Saturn "pill" layout.
+#
+#   ♄ user  ~/dir  branch !2  py 3.13  ....... took 3s ✘ 1  ssh-host
+#   ❯
+#
+# Rounded powerline segments on the left (who / where / git / toolchain),
+# transient context on the right, and the cursor on its own line so long
+# paths never squeeze the command. Colours are the Saturn palette used by
+# Plasma, Konsole and tmux. Glyphs need a Nerd Font: ShaniOS ships the
+# Nerd symbols font as a fallback for every monospace font. Tool symbols
+# come from `starship preset nerd-font-symbols`.
+"$schema" = "https://starship.rs/config-schema.json"
+add_newline = true
+command_timeout = 800
+palette = "saturn"
+
+format = """
+[](fg:coral)\
+[ ♄ ](bg:coral fg:ink)\
+$username\
+[](fg:coral bg:seg2)\
+$directory\
+[](fg:seg2 bg:seg3)\
+$git_branch\
+$git_state\
+$git_status\
+[](fg:seg3 bg:seg4)\
+$c\
+$cpp\
+$rust\
+$golang\
+$nodejs\
+$bun\
+$deno\
+$python\
+$java\
+$kotlin\
+$php\
+$ruby\
+$lua\
+$zig\
+$dart\
+$haskell\
+$elixir\
+$swift\
+$dotnet\
+$nix_shell\
+$conda\
+$container\
+$docker_context\
+$kubernetes\
+$aws\
+$terraform\
+[](fg:seg4)\
+$line_break\
+$character"""
+
+right_format = "$cmd_duration$status$jobs$sudo$battery$hostname"
+continuation_prompt = "[∙ ](bright-black)"
+
+[palettes.saturn]
+# Pill backgrounds/foregrounds: exact values from the shipped SaturnDark.colors
+# (Window/View/alt/Button backgrounds, DecorationFocus accent) and the logo.
+# Text drawn straight on the terminal background (right prompt, ❯) uses ANSI
+# names instead, so it follows the Konsole scheme in both Saturn and Saturn Dark.
+coral = "#ff7f50"
+coral_hi = "#ffc5af"
+amber = "#ffc69b"
+mint = "#7dd6aa"
+rose = "#ef4136"
+lavender = "#b4a1ef"
+ink = "#252434"
+text = "#dedee1"
+muted = "#9999a0"
+seg2 = "#4a4a57"
+seg3 = "#353443"
+seg4 = "#2d2c3b"
+
 [username]
-format = " [╭─$user]($style)@"
 show_always = true
-style_root = "bold red"
-style_user = "bold red"
+style_user = "bg:coral fg:ink bold"
+style_root = "bg:coral fg:ink bold underline"
+format = "[$user ]($style)"
 
-# Second param
-[hostname]
-disabled = false
-format = "[$hostname]($style) in "
-ssh_only = false
-style = "bold dimmed red"
-#trim_at = "-"
-
-# Third param
 [directory]
-style = "purple"
+style = "bg:seg2 fg:text bold"
+read_only_style = "bg:seg2 fg:coral_hi"
+format = "[ $path ]($style)([$read_only ]($read_only_style))"
+read_only = "󰌾"
+truncation_length = 3
+truncation_symbol = "…/"
 truncate_to_repo = true
-truncation_length = 0
-truncation_symbol = "repo: "
+home_symbol = "~"
 
-# Fourth param
-[sudo]
-disabled = false
-
-# Before all the version info (python, nodejs, php, etc.)
-[git_status]
-ahead = "⇡${count}"
-behind = "⇣${count}"
-deleted = "x"
-diverged = "⇕⇡${ahead_count}⇣${behind_count}"
-style = "white"
-
-# Last param in the first line/row
-[cmd_duration]
-disabled = false
-format = "took [$duration]($style)"
-min_time = 1
-
-## SECOND LINE/ROW: Prompt
-# Somethere at the beginning
-[battery]
-charging_symbol = ""
-disabled = true
-discharging_symbol = ""
-full_symbol = ""
-
-[[battery.display]] # "bold red" style when capacity is between 0% and 15%
-disabled = false
-style = "bold red"
-threshold = 15
-
-[[battery.display]] # "bold yellow" style when capacity is between 15% and 50%
-disabled = true
-style = "bold yellow"
-threshold = 50
-
-[[battery.display]] # "bold green" style when capacity is between 50% and 80%
-disabled = true
-style = "bold green"
-threshold = 80
-
-# Prompt: optional param 1
-[time]
-disabled = true
-format = " 🕙 $time($style)\n"
-style = "bright-white"
-time_format = "%T"
-
-# Prompt: param 2
-[character]
-error_symbol = " [×](bold red)"
-success_symbol = " [╰─λ](bold red)"
-
-# SYMBOLS
-[status]
-disabled = false
-format = '[\[$symbol$status_common_meaning$status_signal_name$status_maybe_int\]]($style)'
-map_symbol = true
-pipestatus = true
-symbol = "🔴"
-
-[aws]
-symbol = " "
-
-[conda]
-symbol = " "
-
-[dart]
-symbol = " "
-
-[docker_context]
-symbol = " "
-
-[elixir]
-symbol = " "
-
-[elm]
-symbol = " "
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = "󰝚 "
+"Pictures" = " "
+"Videos" = " "
+"Projects" = "󰲋 "
 
 [git_branch]
-symbol = " "
+symbol = ""
+style = "bg:seg3 fg:mint"
+format = "[ $symbol $branch ]($style)"
+
+[git_state]
+style = "bg:seg3 fg:amber bold"
+format = "[$state( $progress_current/$progress_total) ]($style)"
+
+[git_status]
+style = "bg:seg3 fg:coral_hi"
+format = "[($all_status$ahead_behind )]($style)"
+ahead = "⇡${count}"
+behind = "⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+conflicted = "=${count}"
+deleted = "✘${count}"
+renamed = "»${count}"
+modified = "!${count}"
+staged = "+${count}"
+untracked = "?${count}"
+stashed = "≡"
+
+[c]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
+
+[cpp]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
+
+[rust]
+symbol = "󱘗 "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
 
 [golang]
 symbol = " "
-
-[hg_branch]
-symbol = " "
-
-[java]
-symbol = " "
-
-[julia]
-symbol = " "
-
-[nim]
-symbol = " "
-
-[nix_shell]
-symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
 
 [nodejs]
-symbol = " "
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
 
-[package]
-symbol = " "
+[bun]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
 
-[perl]
-symbol = " "
+[deno]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
+
+[python]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
+
+[java]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
+
+[kotlin]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
 
 [php]
 symbol = " "
-
-[python]
-symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
 
 [ruby]
-symbol = " "
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
 
-[rust]
-symbol = " "
+[lua]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
+
+[zig]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
+
+[dart]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
+
+[haskell]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
+
+[elixir]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
 
 [swift]
-symbol = "ﯣ "
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
+
+[dotnet]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol( $version) ]($style)"
+
+[nix_shell]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol$state( \\($name\\)) ]($style)"
+
+[conda]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol$environment ]($style)"
+
+[container]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol $name ]($style)"
+
+[docker_context]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol$context ]($style)"
+
+[kubernetes]
+symbol = "󱃾 "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol$context( \\($namespace\\)) ]($style)"
+disabled = false
+
+[aws]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol($profile )(\\($region\\)) ]($style)"
+
+[terraform]
+symbol = " "
+style = "bg:seg4 fg:amber"
+format = "[ $symbol$workspace ]($style)"
+
+[cmd_duration]
+min_time = 2000
+style = "yellow"
+format = "[ $duration]($style) "
+show_notifications = true
+min_time_to_notify = 30000
+
+[status]
+disabled = false
+map_symbol = true
+pipestatus = true
+symbol = "✘"
+not_executable_symbol = "🚫"
+not_found_symbol = "?"
+sigint_symbol = "⚡"
+style = "bold red"
+format = "[$symbol $common_meaning$signal_name$maybe_int]($style) "
+pipestatus_format = "[$pipestatus]($style) "
+
+[jobs]
+symbol = "✦"
+style = "bold purple"
+format = "[$symbol$number]($style) "
+
+[sudo]
+disabled = false
+symbol = " "
+style = "yellow"
+format = "[$symbol]($style)"
+
+[battery]
+format = "[$symbol$percentage]($style) "
+full_symbol = "󰁹 "
+charging_symbol = "󰂄 "
+discharging_symbol = "󰂃 "
+
+[[battery.display]]
+threshold = 20
+style = "bold red"
+
+[hostname]
+ssh_only = true
+ssh_symbol = "󰣀 "
+style = "bold cyan"
+format = "[$ssh_symbol$hostname]($style) "
+
+[character]
+success_symbol = "[❯](bold fg:coral)"
+error_symbol = "[❯](bold red)"
+vimcmd_symbol = "[❮](bold green)"
+vimcmd_replace_one_symbol = "[❮](bold purple)"
+vimcmd_visual_symbol = "[❮](bold yellow)"

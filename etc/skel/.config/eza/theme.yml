@@ -1,0 +1,77 @@
+# ~/.config/eza/theme.yml - ShaniOS colours for eza (ls/ll/la/lt).
+# ANSI slots only: the shipped Saturn / Saturn Dark Konsole schemes define
+# them, so listings stay readable in both light and dark. ("8" = bright black)
+colourful: true
+filekinds:
+  normal: {foreground: Default}
+  directory: {foreground: Purple, is_bold: true}
+  symlink: {foreground: Green}
+  pipe: {foreground: Yellow}
+  block_device: {foreground: Yellow, is_bold: true}
+  char_device: {foreground: Yellow}
+  socket: {foreground: Red}
+  special: {foreground: Red}
+  executable: {foreground: Red, is_bold: true}
+  mount_point: {foreground: Purple, is_bold: true, is_underline: true}
+perms:
+  user_read: {foreground: Yellow}
+  user_write: {foreground: Red}
+  user_execute_file: {foreground: Green, is_bold: true}
+  user_execute_other: {foreground: Green}
+  group_read: {foreground: Yellow}
+  group_write: {foreground: Red}
+  group_execute: {foreground: Green}
+  other_read: {foreground: "8"}
+  other_write: {foreground: Red}
+  other_execute: {foreground: "8"}
+  special_user_file: {foreground: Red, is_bold: true}
+  special_other: {foreground: Red}
+  attribute: {foreground: "8"}
+size:
+  major: {foreground: Yellow}
+  minor: {foreground: Yellow}
+  number_byte: {foreground: "8"}
+  number_kilo: {foreground: Default}
+  number_mega: {foreground: Yellow}
+  number_giga: {foreground: Red}
+  number_huge: {foreground: "9", is_bold: true}
+  unit_byte: {foreground: "8"}
+  unit_kilo: {foreground: "8"}
+  unit_mega: {foreground: Yellow}
+  unit_giga: {foreground: Red}
+  unit_huge: {foreground: Red}
+users:
+  user_you: {foreground: "9"}
+  user_root: {foreground: "9"}
+  user_other: {foreground: "8"}
+  group_yours: {foreground: "9"}
+  group_other: {foreground: "8"}
+  group_root: {foreground: "9"}
+links:
+  normal: {foreground: Green}
+  multi_link_file: {foreground: Yellow}
+git:
+  new: {foreground: Green}
+  modified: {foreground: Yellow}
+  deleted: {foreground: "9"}
+  renamed: {foreground: Purple}
+  typechange: {foreground: Purple}
+  ignored: {foreground: "8"}
+  conflicted: {foreground: "9", is_bold: true}
+git_repo:
+  branch_main: {foreground: Green}
+  branch_other: {foreground: Yellow}
+  git_clean: {foreground: Green}
+  git_dirty: {foreground: Red}
+date: {foreground: "8"}
+inode: {foreground: "8"}
+blocks: {foreground: "8"}
+header: {foreground: Default, is_underline: true}
+octal: {foreground: Purple}
+flags: {foreground: "8"}
+symlink_path: {foreground: Green}
+control_char: {foreground: Red}
+broken_symlink: {foreground: "9", is_underline: true}
+broken_path_overlay: {foreground: "8"}
+filenames: {}
+extensions: {}

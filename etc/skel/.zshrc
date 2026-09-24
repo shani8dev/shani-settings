@@ -1,69 +1,51 @@
-## Path section
-# Set $PATH if ~/.local/bin exist
-if [ -d "$HOME/.local/bin" ]; then
-    export PATH=$HOME/.local/bin:$PATH
-fi
+# ~/.zshrc - ShaniOS (zsh is the default login shell)
 
-eval "$(starship init zsh)"
-function set_win_title(){
-    echo -ne "\033]0; $USER@$HOST:${PWD/$HOME/~} \007"
-}
-precmd_functions+=(set_win_title)
-
-
-## Plugins section: Enable fish style features
-# Use syntax highlighting
-source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
-
-# Use autosuggestion
-source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-
-# Use history substring search
-source /usr/share/zsh/plugins/zsh-history-substring-search/zsh-history-substring-search.zsh
-
-# Use fzf
-source /usr/share/fzf/key-bindings.zsh
-source /usr/share/fzf/completion.zsh
-
-
-## Options section
-setopt correct                                                  # Auto correct mistakes
-setopt extendedglob                                             # Extended globbing. Allows using regular expressions with *
-setopt nocaseglob                                               # Case insensitive globbing
-setopt rcexpandparam                                            # Array expension with parameters
-setopt nocheckjobs                                              # Don't warn about running processes when exiting
-setopt numericglobsort                                          # Sort filenames numerically when it makes sense
-setopt nobeep                                                   # No beep
-setopt appendhistory                                            # Immediately append history instead of overwriting
-setopt histignorealldups                                        # If a new command is a duplicate, remove the older one
-setopt autocd                                                   # if only directory path is entered, cd there.
-setopt auto_pushd
-setopt pushd_ignore_dups
-setopt pushdminus
-
-# Completion.
-autoload -Uz compinit
-compinit
-zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'       # Case insensitive tab completion
-zstyle ':completion:*' rehash true                              # automatically find new executables in path 
-zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"         # Colored completion (different colors for dirs/files/etc)
-zstyle ':completion:*' completer _expand _complete _ignored _approximate
-zstyle ':completion:*' menu select
-zstyle ':completion:*' select-prompt '%SScrolling active: current selection at %p%s'
-zstyle ':completion:*:descriptions' format '%U%F{cyan}%d%f%u'
-
-# Speed up completions
-zstyle ':completion:*' accept-exact '*(N)'
-zstyle ':completion:*' use-cache on
-zstyle ':completion:*' cache-path ~/.cache/zcache
-
-# automatically load bash completion functions
-autoload -U +X bashcompinit && bashcompinit
-
+## History: big, shared live between terminals, no duplicates
 HISTFILE=~/.zhistory
 HISTSIZE=50000
-SAVEHIST=10000
+SAVEHIST=50000
+setopt extended_history          # timestamps
+setopt inc_append_history        # write as you go, not on exit
+setopt share_history             # other terminals see new commands
+setopt hist_ignore_all_dups      # drop older duplicates
+setopt hist_ignore_space         # " cmd" stays out of history
+setopt hist_reduce_blanks
+setopt hist_verify               # !! expands for review before running
 
+## Options
+setopt correct                   # offer to fix mistyped commands
+setopt extendedglob              # ^, ~, # in globs
+setopt nocaseglob                # case-insensitive globbing
+setopt numericglobsort           # file10 after file9
+setopt rcexpandparam             # array expansion with parameters
+setopt nocheckjobs               # no warning about running jobs on exit
+setopt nobeep
+setopt autocd                    # type a directory to cd into it
+setopt auto_pushd pushd_ignore_dups pushdminus   # cd -<TAB> = recent dirs
+setopt interactive_comments      # allow # comments at the prompt
+
+## Completion (zsh-completions installs into site-functions itself)
+[[ -d ~/.cache/zsh ]] || mkdir -p ~/.cache/zsh
+autoload -Uz compinit
+compinit -d ~/.cache/zsh/zcompdump
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*'  # case-insensitive, then partial
+zstyle ':completion:*' rehash true                              # see new executables at once
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' completer _expand _complete _ignored _approximate
+zstyle ':completion:*' menu select
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*' select-prompt '%SScrolling active: current selection at %p%s'
+zstyle ':completion:*:descriptions' format '%F{1}-- %d --%f'
+zstyle ':completion:*:warnings' format '%F{8}-- no matches --%f'
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=31'
+zstyle ':completion:*' accept-exact '*(N)'
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path ~/.cache/zsh/zcache
+autoload -U +X bashcompinit && bashcompinit
+
+# Terminal title: user@host:dir
+function set_win_title() { print -Pn "\e]0;%n@%m:%~\a" }
+precmd_functions+=(set_win_title)
 
 ## Keys
 # Use emacs key bindings
@@ -80,25 +62,6 @@ if [[ -n "${terminfo[knp]}" ]]; then
   bindkey -M emacs "${terminfo[knp]}" down-line-or-history
   bindkey -M viins "${terminfo[knp]}" down-line-or-history
   bindkey -M vicmd "${terminfo[knp]}" down-line-or-history
-fi
-
-# Start typing + [Up-Arrow] - fuzzy find history forward
-if [[ -n "${terminfo[kcuu1]}" ]]; then
-  autoload -U up-line-or-beginning-search
-  zle -N up-line-or-beginning-search
-
-  bindkey -M emacs "${terminfo[kcuu1]}" up-line-or-beginning-search
-  bindkey -M viins "${terminfo[kcuu1]}" up-line-or-beginning-search
-  bindkey -M vicmd "${terminfo[kcuu1]}" up-line-or-beginning-search
-fi
-# Start typing + [Down-Arrow] - fuzzy find history backward
-if [[ -n "${terminfo[kcud1]}" ]]; then
-  autoload -U down-line-or-beginning-search
-  zle -N down-line-or-beginning-search
-
-  bindkey -M emacs "${terminfo[kcud1]}" down-line-or-beginning-search
-  bindkey -M viins "${terminfo[kcud1]}" down-line-or-beginning-search
-  bindkey -M vicmd "${terminfo[kcud1]}" down-line-or-beginning-search
 fi
 
 # [Home] - Go to beginning of line
@@ -181,32 +144,47 @@ if [[ -n "${key[Alt-Right]}" ]]; then
 	bindkey -M vicmd "${key[Alt-Right]}" forward-word
 fi
 
-## Useful aliases
+# Ctrl-Backspace / Ctrl-Delete delete a word; Ctrl-Z toggles the job back
+bindkey -M emacs '^H' backward-kill-word
+bindkey -M emacs '^[[3;5~' kill-word
+fancy-ctrl-z() { if [[ $#BUFFER -eq 0 ]]; then BUFFER=fg; zle accept-line; else zle push-input; fi }
+zle -N fancy-ctrl-z
+bindkey -M emacs '^Z' fancy-ctrl-z
+# Alt-S: prefix the line with sudo
+sudo-command-line() { [[ -z $BUFFER ]] && zle up-history; [[ $BUFFER == sudo\ * ]] || BUFFER="sudo $BUFFER"; zle end-of-line }
+zle -N sudo-command-line
+bindkey -M emacs '\es' sudo-command-line
 
-# Common use
-alias tarnow='tar -acf '
-alias untar='tar -zxvf '
-alias wget='wget -c '
-alias psmem='ps auxf | sort -nr -k 4'
-alias psmem10='ps auxf | sort -nr -k 4 | head -10'
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias .....='cd ../../../..'
-alias ......='cd ../../../../..'
-alias dir='dir --color=auto'
-alias vdir='vdir --color=auto'
-alias hw='hwinfo --short'                          # Hardware Info
-alias ip='ip -color'
+## ShaniOS defaults: aliases, fzf, starship, zoxide, mcfly
+# (inside a Distrobox container $HOME is shared but /usr isn't: use the host's)
+for _f in /usr/share/shani/shell/common.sh /run/host/usr/share/shani/shell/common.sh; do
+  [[ -r $_f ]] && { source $_f; break; }
+done
+unset _f
 
-# Get the error messages from journalctl
-alias jctl="journalctl -p 3 -xb"
+## Plugins: fish-like suggestions and highlighting (keep these last)
+ZSH_AUTOSUGGEST_STRATEGY=(history completion)
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'
+ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE=200
+ZSH_HIGHLIGHT_HIGHLIGHTERS=(main brackets)   # also colour matching brackets
+# (plugin files come from the host too when inside Distrobox; any that
+# aren't found are skipped rather than erroring)
+_zp() { local d; for d in /usr/share/zsh/plugins /run/host/usr/share/zsh/plugins; do
+  [[ -r $d/$1/$1.zsh ]] && { source $d/$1/$1.zsh; return 0; }; done; return 1; }
+_zp zsh-autosuggestions
+_zp zsh-syntax-highlighting
+# substring search must load after syntax highlighting
+_zp zsh-history-substring-search
+HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_FOUND='bg=#ff7f50,fg=#252434,bold'   # accent (DecorationFocus)
+HISTORY_SUBSTRING_SEARCH_HIGHLIGHT_NOT_FOUND='bg=#ef4136,fg=#ffffff,bold'
+HISTORY_SUBSTRING_SEARCH_ENSURE_UNIQUE=1
+# Up/Down: search history for any part of what's typed
+(( $+widgets[history-substring-search-up] )) && for _km in emacs viins; do
+  bindkey -M $_km '^[[A' history-substring-search-up
+  bindkey -M $_km '^[[B' history-substring-search-down
+  [[ -n "${terminfo[kcuu1]}" ]] && bindkey -M $_km "${terminfo[kcuu1]}" history-substring-search-up
+  [[ -n "${terminfo[kcud1]}" ]] && bindkey -M $_km "${terminfo[kcud1]}" history-substring-search-down
+done
+unset _km; unfunction _zp
 
-# Load Mcfly
-export MCFLY_FUZZY=true
-export MCFLY_RESULTS=20
-export MCFLY_INTERFACE_VIEW=BOTTOM
-export MCFLY_RESULTS_SORT=LAST_RUN
-eval "$(mcfly init zsh)"
-
-
+## Your own additions below

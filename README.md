@@ -10,7 +10,7 @@ Default system configuration for Shanios — a filesystem overlay of `/etc` and 
 | `etc/sudoers.d/` | `wheel` group sudo access, plus editor/insults/pwfeedback sudo behavior tweaks |
 | `usr/lib/sysctl.d/` | Kernel hardening (`90-security-hardening.conf`, Lynis-driven), plus network and scheduler tuning |
 | `etc/audit/rules.d/` | `auditd` watch rules for privilege escalation, auth files, and module loading |
-| `usr/lib/modprobe.d/` | Module blacklists (firewire, unused protocols) and minor device tweaks (nobeep, noime) |
+| `usr/lib/modprobe.d/` | Module blacklists (firewire, unused protocols) and minor device tweaks (nobeep) |
 | `usr/lib/udev/rules.d/` | Device permission rules — game controllers/wheels, HPET/RTC access |
 | `etc/firewalld/zones/public.xml` | Default firewalld zone (ssh + mdns) — `server` overrides this in its own profile overlay |
 | `etc/samba/smb.conf`, `usr/lib/tmpfiles.d/sambashare.conf` | Local file sharing (home dirs, printers, ad-hoc usershares) |

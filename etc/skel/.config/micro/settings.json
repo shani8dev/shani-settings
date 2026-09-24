@@ -1,11 +1,24 @@
 {
-    "/etc/*": {
-        "filetype": "conf"
-    },
-    "/home/*/.config/*": {
-        "filetype": "conf"
-    },
     "autosu": true,
-    "colorscheme": "geany",
-    "mkparents": true
+    "colorscheme": "saturn",
+    "truecolor": "on",
+    "mkparents": true,
+    "cursorline": false,
+    "diffgutter": true,
+    "scrollbar": true,
+    "hlsearch": true,
+    "savecursor": true,
+    "saveundo": true,
+    "softwrap": true,
+    "wordwrap": true,
+    "rmtrailingws": true,
+    "tabstospaces": true,
+    "tabsize": 4,
+    "matchbrace": true,
+    "ft:go": {
+        "tabstospaces": false
+    },
+    "ft:makefile": {
+        "tabstospaces": false
+    }
 }

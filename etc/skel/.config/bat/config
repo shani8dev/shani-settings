@@ -1,0 +1,9 @@
+# ~/.config/bat/config - ShaniOS
+# "ansi" uses the terminal's own palette, so bat matches Saturn in both
+# light and dark Konsole schemes.
+--theme="ansi"
+--style="numbers,changes,header-filename,grid"
+--italic-text=always
+--map-syntax="*.conf:INI"
+--map-syntax=".ignore:Git Ignore"
+--map-syntax="PKGBUILD:Bourne Again Shell (bash)"

@@ -64,7 +64,10 @@ if compgen -G "$REPO_ROOT/usr/lib/udev/rules.d/*.rules" >/dev/null 2>&1; then
         rc=$?
         if [[ $rc -ne 0 ]]; then
             if [[ "$(basename "$f")" == "40-hpet-permissions.rules" ]]; then
-                unexpected=$(echo "$out" | grep -v "Unknown group 'realtime', ignoring\." \
+                # systemd <= ~255: "Unknown group 'realtime', ignoring."
+                # systemd >= 256 (Arch, what ShaniOS builds on):
+                #   "Failed to resolve group 'realtime', ignoring: Unknown group"
+                unexpected=$(echo "$out" | grep -v -E "Unknown group 'realtime', ignoring\.|Failed to resolve group 'realtime', ignoring: Unknown group" \
                     | grep -v "udev rules check failed\." \
                     | grep -v "udev rules files have been checked\." \
                     | grep -v "^[[:space:]]*Success:" \

@@ -1,0 +1,24 @@
+# ~/.inputrc - ShaniOS readline settings (bash, python, sqlite, gdb, ...)
+$include /etc/inputrc
+
+set completion-ignore-case on
+set completion-map-case on           # - and _ are equivalent
+set show-all-if-ambiguous on         # one Tab lists matches
+set colored-stats on                 # colour by file type, like ls
+set colored-completion-prefix on
+set visible-stats on
+set mark-symlinked-directories on
+set menu-complete-display-prefix on
+set skip-completed-text on
+set enable-bracketed-paste on
+set bell-style none
+
+# Up/Down search history for what's already typed; Ctrl-arrows move by word
+"\e[A": history-search-backward
+"\e[B": history-search-forward
+"\e[1;5C": forward-word
+"\e[1;5D": backward-word
+"\e[3;5~": kill-word
+"\C-h": backward-kill-word
+# Shift-Tab cycles backwards through completions
+"\e[Z": menu-complete-backward

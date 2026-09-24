@@ -1,0 +1,54 @@
+// ShaniOS fastfetch defaults (system-wide: $XDG_CONFIG_DIRS). A user's own
+// ~/.config/fastfetch/config.jsonc replaces this file entirely.
+// Laid out to fit Konsole's default 110 columns (CPU/GPU without clocks,
+// disks without filesystem type). Logo: the ShaniOS mark from /etc/issue, yellow -> red like the logo.
+// Colours are ANSI slots: the shipped Saturn / Saturn Dark Konsole schemes
+// define them, so the output is readable in both light and dark.
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "file",
+        "source": "/usr/share/shani/fastfetch/shani.txt",
+        "color": {
+            "1": "33",
+            "2": "91",
+            "3": "31"
+        },
+        "padding": { "top": 1, "left": 1, "right": 2 }
+    },
+    "display": {
+        "separator": "  ",
+        "color": { "keys": "1;31", "title": "1;33" },
+        "key": { "width": 8 },
+        "size": { "binaryPrefix": "iec", "ndigits": 1 },
+        "percent": { "type": 3, "color": { "green": "32", "yellow": "33", "red": "31" } },
+        "bar": { "char": { "elapsed": "■", "total": "·" }, "width": 8 }
+    },
+    "modules": [
+        "title",
+        { "type": "separator", "string": "─" },
+        { "type": "os", "key": " OS", "format": "{pretty-name} {arch}" },
+        { "type": "kernel", "key": " Kernel" },
+        { "type": "uptime", "key": "󰅐 Uptime" },
+        { "type": "packages", "key": "󰏖 Packages" },
+        { "type": "shell", "key": " Shell" },
+        { "type": "terminal", "key": " Terminal" },
+        { "type": "de", "key": "󰧨 Desktop" },
+        { "type": "wm", "key": " WM" },
+        { "type": "theme", "key": "󰉼 Theme" },
+        { "type": "icons", "key": " Icons" },
+        { "type": "font", "key": " Font" },
+        { "type": "separator", "string": "─" },
+        { "type": "host", "key": "󰌢 Host" },
+        { "type": "cpu", "key": " CPU", "format": "{name} ({cores-logical})" },
+        { "type": "gpu", "key": "󰢮 GPU", "format": "{name}" },
+        { "type": "memory", "key": " Memory" },
+        { "type": "swap", "key": "󰓡 Swap" },
+        { "type": "disk", "key": "󰋊 Disk", "folders": "/:/data:/home", "format": "{size-used} / {size-total} ({size-percentage})" },
+        { "type": "battery", "key": "󰁹 Battery" },
+        { "type": "localip", "key": "󰩟 Local IP", "showIpv6": false },
+        { "type": "locale", "key": " Locale" },
+        "break",
+        { "type": "colors", "symbol": "circle" }
+    ]
+}

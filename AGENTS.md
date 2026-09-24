@@ -160,6 +160,52 @@ rather than writing in a generic format.
 
 ## Audit-verified known issues (confirmed present)
 
+- **Validator broke on current systemd; tmpfiles errored at every install;
+  shipped modes wrong — FIXED (2026-09-23).** (1) `tests/validate-configs.sh`
+  exempted the known `40-hpet-permissions.rules` warning by its old wording
+  only; systemd >= 256 (Arch 261, what ShaniOS ships) says "Failed to resolve
+  group 'realtime', ignoring: Unknown group", so the real tree FAILED there
+  (CI stayed green only on ubuntu-latest's older udev). Both wordings now
+  exempt; `test_validator.sh` 8/8 on systemd 261. (2) The 9 sysfs/procfs
+  `w` lines in `usr/lib/tmpfiles.d/` errored ("Read-only file system", rc=73)
+  on the pacman hook's `systemd-tmpfiles --create` in the image-build chroot
+  (seen in the plasma CI build log). Now `w!` (boot-only): verified silent on
+  `--create`, still applied by `systemd-tmpfiles-setup.service` (`--boot`).
+  (3) Packaging, in `shani-pkgbuilds/shani-settings/PKGBUILD`: a recursive
+  `chmod 750 -R` ran after the per-file modes, so every shipped sudoers
+  drop-in was 0750 (`visudo -c`: "bad permissions, should be mode 0440") and
+  the polkit rules dir conflicted with Arch polkit's own 755 (pacman "directory
+  permissions differ" on every install). Fixed there (dir left 755 root:root);
+  verified by `pacman -U` of a package built from this working tree onto
+  Arch (polkit 127): no permission warning, sudoers 0440 + `visudo -c` OK,
+  the tmpfiles hook no longer fails. Note the PKGBUILD builds from the
+  GitHub tarball at `_commit`, so none of this ships until committed,
+  pushed and `_commit` bumped.
+
+- **sysctl.d: 9 keys that could not apply at boot — FIXED (2026-09-23).**
+  Checked every one of the 129 keys against `/proc/sys` on a real 7.0
+  kernel (ShaniOS ships 7.1.8), then ran real `systemd-sysctl` (Arch,
+  systemd 261.3) over `HEAD` vs the working tree in an unprivileged
+  container, where nothing gets written and a missing key still shows as
+  "No such file or directory". (1) `20-sched.conf`'s
+  `kernel.sched_child_runs_first` no longer exists on these kernels (same
+  fate as the EEVDF-era knobs `e4a6007` already removed): removed. (2)
+  `80-gamecompatibility.conf`'s 8 per-bridge `net.ipv4.conf.<br>.rp_filter`
+  keys (waydroid0, podman0/1, cni-podman0, lxdbr0, lxcbr0, virbr0,
+  docker0) logged "Couldn't write ... No such file or directory" on every
+  boot, contrary to the old "harmless" comment. They DO take effect: in a
+  container netns, creating `virbr0` and running what systemd's
+  `99-systemd.rules` runs on a net "add" event
+  (`systemd-sysctl --prefix=/net/ipv4/conf/virbr0`) moved it 2 → 0. Now
+  prefixed with `-` (skip if missing): boot is silent and hotplug still
+  applies 0. Result: 14 → 5 "missing" lines in the container. The 5 left
+  (`net.ipv4.neigh.default.gc_thresh1-3`, `net.core.bpf_jit_harden`,
+  `net.core.netdev_max_backlog`) exist only in the initial netns and are
+  present on the real host kernel, so they are not bugs.
+  `tests/validate-configs.sh` + `tests/test_validator.sh` (8/8) still
+  pass. Ships only after `shani-pkgbuilds/shani-settings/PKGBUILD`'s
+  `_commit` is bumped.
+
 - **`map to guest = Bad Password` — FIXED.** Was: `etc/samba/smb.conf` —
   a real username with a *wrong* password silently mapped to guest access
   on any share opting into guests, instead of a hard auth failure —

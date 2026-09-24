@@ -1,0 +1,55 @@
+# /etc/gitconfig - ShaniOS system-wide git defaults (git config --system).
+# Your ~/.gitconfig overrides any of these.
+[core]
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[delta]
+	navigate = true              # n / N jump between files
+	line-numbers = true
+	hyperlinks = true
+	syntax-theme = ansi          # follows the terminal's (Saturn) palette
+	file-style = bold red
+	file-decoration-style = red ul
+	hunk-header-decoration-style = brightblack box
+	# added/removed line backgrounds: delta picks dark or light ones to match
+	# the terminal (Saturn or Saturn Dark), so they are not hard-coded here
+[init]
+	defaultBranch = main
+[diff]
+	algorithm = histogram
+	colorMoved = default
+	mnemonicPrefix = true
+	renames = true
+[merge]
+	conflictStyle = zdiff3
+[rerere]
+	enabled = true
+[fetch]
+	prune = true
+[push]
+	autoSetupRemote = true
+[branch]
+	sort = -committerdate
+[tag]
+	sort = version:refname
+[column]
+	ui = auto
+[help]
+	autocorrect = prompt
+[commit]
+	verbose = true
+[alias]
+	st = status -sb
+	co = checkout
+	sw = switch
+	br = branch -vv
+	ci = commit
+	amend = commit --amend --no-edit
+	unstage = restore --staged
+	last = log -1 HEAD --stat
+	lg = log --graph --date=relative --format='%C(red)%h%C(reset) %C(green)%d%C(reset) %s %C(brightblack)- %an, %ad%C(reset)'
+	today = log --since=midnight --oneline --author-date-order
+	wip = !git add -A && git commit -qm WIP
+	undo = reset --soft HEAD~1
+	aliases = config --get-regexp ^alias\\.

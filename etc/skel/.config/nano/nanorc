@@ -1,0 +1,28 @@
+## ~/.config/nano/nanorc - ShaniOS
+set linenumbers
+set mouse
+set autoindent
+set tabstospaces
+set tabsize 4
+set indicator                 # scroll bar
+set softwrap
+set atblanks
+set constantshow              # cursor position in the status bar
+set zap                       # Delete/Backspace erase a marked region
+set historylog
+set positionlog               # reopen files where you left off
+set stateflags
+set smarthome
+set trimblanks
+
+set titlecolor bold,black,#f85          # accent #ff7f50 (nano takes #rgb)
+set statuscolor black,#f85
+set promptcolor black,#fc9                # neutral #ffc69b
+set numbercolor lightblack
+set selectedcolor black,#fca             # active #ffc5af
+set errorcolor bold,white,red
+
+## Syntax highlighting (nano's own set)
+include "/usr/share/nano/*.nanorc"
+include "/usr/share/nano/extra/*.nanorc"
+
