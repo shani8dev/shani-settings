@@ -245,6 +245,26 @@ rather than writing in a generic format.
   verified by reading both rules — the dedicated one fires on the exact
   same action id/subject conditions, just with an added (already-satisfied
   for a normal self-service call) uid check.
+- **No PAM stack is shipped here at all (documented 2026-09-26, not fixed —
+  it needs a decision).** This repo is the `/etc` + `/usr` overlay, and it
+  does ship real `/etc` content — `firewalld`, `fail2ban`, `sudoers.d`,
+  `samba`, `environment.d`, `skel` — but **no `pam.d` directory and no PAM
+  file of any kind** (verified by a filesystem sweep of this repo). Every
+  install therefore runs on the distro's stock PAM configuration.
+  Two consequences worth knowing before touching auth here:
+  (1) `shani-core` declares `libpwquality`, but with no `pam_pwquality.so`
+  in any password stack the library is installed and **inert**, so no
+  password strength policy is enforced on a Shanios install (recorded
+  against the dependency in `shani-pkgbuilds`, commit `611e164`).
+  (2) It also means enterprise directory login is **not** a
+  drop-the-package-in job. KDE's 2026-2028 goal list asks for Web/Kerberos
+  SSO and better LDAP integration; the only Kerberos in the tree is
+  incidental (`splix` has a build-time `krb5` makedepend for a printer
+  driver, `shani-peripherals` pulls `pam-krb5` for authenticated printing),
+  and `shani-network` depends on `openldap` for client libraries only — no
+  `slapd` server, no `sssd_ldap`, no PAM identity wiring. Real SSO would
+  mean authoring the PAM layer in this repo first, then adding directory
+  integration on top. Do not assume a PAM file exists to extend.
 - **World-writable sysfs (Med) — investigated, left as-is.**
   `usr/lib/udev/rules.d/60-openrgb.rules:18-30` uses `chmod a+w` on ~9
   specific ASUS TUF sysfs attributes (`kbbl_*`, `kbd_rgb_mode`,
