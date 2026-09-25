@@ -238,7 +238,8 @@ rather than writing in a generic format.
   dedicated rule further down (`action.lookup("uid") == subject.user.uid`)
   — the dedicated rule is strictly more scoped (self only, not any uid) and
   already covers the same functionality (see its own comment: lets a user
-  enable linger for `shani-update.timer`/similar to survive logout).
+  enable linger for user systemd units (like `shani-cassini-agent.timer`)
+  to survive logout).
   Removed the redundant, less-scoped copy from the generic block; the
   properly-scoped dedicated rule still grants it. Functionality unchanged,
   verified by reading both rules — the dedicated one fires on the exact
