@@ -300,7 +300,7 @@ polkit.addRule(function(action, subject) {
 
 // ── Session user-linger (for long-running user services) ──────────────────────
 // Allows the current user to enable linger for their own account so user
-// systemd units (like shani-update.timer) survive after logout.
+// systemd units (like shani-cassini-agent.timer) survive after logout.
 
 polkit.addRule(function(action, subject) {
     if (action.id == "org.freedesktop.login1.set-user-linger" &&
@@ -317,8 +317,9 @@ polkit.addRule(function(action, subject) {
 // trigger a system update via pkexec with their own password (AUTH_SELF).
 //
 // Rationale:
-//   - shani-update is the user-facing interface; shani-deploy is never called
-//     directly by users. This rule is what makes pkexec shani-deploy work.
+//   - Shani Cassini's Updates & Rollback page is the user-facing interface;
+//     shani-deploy is never called directly by users. This rule is what makes
+//     pkexec shani-deploy work.
 //   - Requiring wheel would lock out non-admin users on systems where the
 //     owner is the only user and has not joined wheel.
 //   - AUTH_SELF ensures a password prompt on every deployment, preventing
@@ -611,7 +612,7 @@ polkit.addRule(function(action, subject) {
 
 // ── gen-efi (admin only) ──────────────────────────────────────────────────────
 
-// gen-efi is never called by shani-update. shani-deploy invokes it via chroot
+// gen-efi is never called by the desktop app. shani-deploy invokes it via chroot
 // as already-root (no polkit involved). This rule only matters for direct
 // manual invocation by an administrator.
 polkit.addRule(function(action, subject) {
