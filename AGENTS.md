@@ -350,7 +350,7 @@ Re-scan against `../garuda-catalog.md` (29 repos, not 34). **Confirmed mapping: 
 - Tier 1/2 risk framing for privilege-granting defaults (documented security posture)
 - Profile-aware defaults (server override pattern; garuda-setup-assistant is per-flavor but not security-framed)
 
-**Qt GUI gap note**: the comparable garuda repos are GUI apps (garuda-settings-manager Qt5/KF5, garuda-setup-assistant Qt) while shani-settings is a static overlay — garuda's 12 Qt GUI apps have no shani counterpart beyond shani-gui.
+**Qt GUI gap note**: the comparable garuda repos are GUI apps (garuda-settings-manager Qt5/KF5, garuda-setup-assistant Qt) while shani-settings is a static overlay — garuda's 12 Qt GUI apps have no shani counterpart beyond shani-cassini.
 
 ### 📋 Implementation Roadmap (2026-09-17)
 
