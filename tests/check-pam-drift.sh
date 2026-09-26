@@ -42,9 +42,22 @@ norm() {
         | grep -v '^$'
 }
 
-# Our one intentional addition, removed before comparing.
+# Our intentional additions, removed before comparing. Keep this list in step
+# with the pam_* lines this repo adds above pambase's first auth line.
 theirs=$(norm "$THEIRS")
-ours=$(norm "$OURS" | grep -v 'pam_u2f\.so')
+ours=$(norm "$OURS" | grep -vE 'pam_(u2f|krb5)\.so')
+
+# Refuse to compare against ourselves. On a real Shanios install
+# /etc/pam.d/system-auth IS our file (this package overwrites it), so running
+# this there would report our own additions as upstream drift - a false alarm
+# in the one place someone might plausibly run it. Only meaningful where
+# pambase is still stock, i.e. a build host or CI.
+if printf '%s\n' "$theirs" | grep -qE 'pam_(u2f|krb5)\.so'; then
+    echo "SKIP: $THEIRS has already been replaced by our own override." >&2
+    echo "      This check needs a stock pambase (build host or CI) to be" >&2
+    echo "      meaningful; comparing our file against itself proves nothing." >&2
+    exit 0
+fi
 
 if [[ "$ours" == "$theirs" ]]; then
     echo "OK: system-auth matches pambase apart from the pam_u2f line."
