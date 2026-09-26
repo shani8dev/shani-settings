@@ -939,3 +939,32 @@ polkit.addRule(function(action, subject) {
             return polkit.Result.AUTH_ADMIN;
     }
 });
+
+  // ── Cassini config writer (wheel) ───────────────────────────────────────────
+  // shani-cassini-save installs ONE configuration file over ONE target from its
+  // own allowlist, after running that target's validator. It takes no command
+  // from the caller, cannot be pointed at a path of the caller's choosing, and
+  // reads the new content from stdin rather than from a file the caller names,
+  // so this grant does not make the caller root.
+  //
+  // Wheel + AUTH_SELF, matching shani-deploy, gen-efi and shani-reset above.
+  // Not AUTH_ADMIN: that tier is for irreversible operations (see the file
+  // header), and a config drop-in is reversible by deleting one file.
+  //
+  // Targets are drop-ins, never /etc/sudoers or /etc/ssh/sshd_config: a
+  // mistake in those takes sudo or SSH away from the whole machine.
+  //
+  // There is deliberately NO .policy action annotating this program with
+  // org.freedesktop.policykit.exec.path. An exec.path annotation makes pkexec
+  // resolve authorization to the ANNOTATED action instead, so the
+  // action.id test below would never match and every caller would silently
+  // get that action's defaults rather than this rule. Naming the program here
+  // is what actually narrows the grant.
+  polkit.addRule(function(action, subject) {
+      if (action.id == "org.freedesktop.policykit.exec" &&
+          action.lookup("program") == "/usr/local/bin/shani-cassini-save" &&
+          subject.active == true && subject.local == true &&
+          subject.isInGroup("wheel")) {
+          return polkit.Result.AUTH_SELF;
+      }
+  });
