@@ -245,16 +245,45 @@ rather than writing in a generic format.
   verified by reading both rules — the dedicated one fires on the exact
   same action id/subject conditions, just with an added (already-satisfied
   for a normal self-service call) uid check.
-- **No PAM stack is shipped here at all (verified 2026-09-26; the recipe below
-  is tested, but deliberately NOT shipped — it is a policy decision).** This
-  repo is the `/etc` + `/usr` overlay, and it does ship real `/etc` content —
-  `firewalld`, `fail2ban`, `sudoers.d`, `samba`, `environment.d`, `skel` —
-  but **no `pam.d` directory and no PAM file of any kind** (filesystem sweep).
-  Every install therefore runs on stock pambase configuration, and stock Arch
-  never references `pam_pwquality` anywhere. So `shani-core`'s
-  `libpwquality` is installed and **inert**: no password strength policy is
-  enforced (recorded against the dependency in `shani-pkgbuilds`, `611e164`).
-  **Where it would go, and why it is not trivial:** there is no
+- **This repo now owns `/etc/pam.d/system-auth` (shipped 2026-09-26); it is the
+  ONLY PAM file here, and it is a fork of a pambase file.** Until then this
+  repo shipped no PAM file of any kind, which is why the notes below about
+  "stock pambase configuration" are the *pre-override* state — re-read them
+  with that in mind. The override exists because `pam_u2f` was a
+  `shani-peripherals` dependency that **no stock PAM stack referenced**, so a
+  FIDO2/U2F security key was installed and inert: detected, but unable to
+  authenticate. Verified by installing `gdm`, `plasma-login-manager`, `sddm`
+  and `kscreenlocker` together and grepping every file in `/etc/pam.d` and
+  `/usr/lib/pam.d` — `pam_u2f` appeared in **zero** stacks, while
+  `pam_fprintd` appeared in two and `pam_pkcs11` in two.
+  **`system-auth` is the file to override, and `system-local-login` is the
+  tempting wrong answer:** `plasmalogin` — the Plasma edition's actual login
+  manager — includes `system-login`, *not* `system-local-login`. The two are
+  siblings that both include `system-auth`, so `system-auth` is the only
+  chokepoint that reaches GNOME, KDE, Plasma and getty together.
+  **`auth sufficient`, never `required` — measured, not assumed.** With no key
+  present `pam_u2f.so` returns `PAM_AUTHINFO_UNAVAIL` (9). Under `required`
+  that fails the whole stack, so a machine with no security key could not log
+  in with its password either; under `sufficient` it is ignored and the stack
+  falls through to `pam_unix`. Verified with a compiled libpam client feeding
+  a password through the conversation callback, called as a **non-root** user
+  through a service that really includes the file: correct password succeeds,
+  wrong password still rejected, with `pam_deny`/`pam_permit` controls in the
+  same run. That harness detail is not incidental — an earlier attempt appeared
+  to show an auth bypass purely because it ran as root, where
+  `pam_rootok.so` short-circuits the stack, and it tested `/etc/pam.d/su`,
+  whose `auth` stack never includes `system-auth` at all. `pam_u2f` is
+  deliberately **not** a dependency of this package (it ships in
+  `shani-peripherals`); if genuinely absent, PAM skips the missing module and
+  the `sufficient` line falls through to the password, so the failure direction
+  is safe.
+  **Maintenance:** derived from pambase 20260616-1 and will drift silently —
+  pambase's own upgrade does not touch this file, so nothing alerts. Re-diff
+  against `pacman -Ql pambase` -> `etc/pam.d/system-auth` on every pambase bump
+  and carry upstream changes over by hand.
+  `pam_krb5` is still inert (no stack references it), and so is `shani-core`'s
+  `libpwquality` — **deliberately not shipped**, unlike `pam_u2f` above.
+  **Where that one would go, and why it is not the same decision:** there is no
   `/etc/pam.d/password` on Arch at all — the real stack is
   `/etc/pam.d/system-auth`, and `passwd`, `su`, `login` and `chpasswd` each
   do `password include system-auth`. That one file is pambase-owned and
@@ -277,8 +306,9 @@ rather than writing in a generic format.
   `pam-krb5` for authenticated printing), and `shani-network` depends on
   `openldap` for client libraries only — no
   `slapd` server, no `sssd_ldap`, no PAM identity wiring. Real SSO would
-  mean authoring the PAM layer in this repo first, then adding directory
-  integration on top. Do not assume a PAM file exists to extend.
+  mean authoring the PAM layer in this repo on top of the `system-auth`
+  override above, then adding directory integration — the override is the
+  hook, but it carries a `pam_u2f` line, not an identity provider.
 - **World-writable sysfs (Med) — investigated, left as-is.**
   `usr/lib/udev/rules.d/60-openrgb.rules:18-30` uses `chmod a+w` on ~9
   specific ASUS TUF sysfs attributes (`kbbl_*`, `kbd_rgb_mode`,
