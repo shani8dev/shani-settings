@@ -58,6 +58,25 @@ jobs:
           # notice + exit 0; per-file hashes, if ever added, are compared.
           bash tests/check-checksums.sh shani-pkgbuilds/shani-settings/PKGBUILD
 
+  pam-drift:
+    name: PAM system-auth drift check
+    # Must be Arch, not ubuntu: the comparison target is pambase's
+    # /etc/pam.d/system-auth, which is Arch's layout. Debian/Ubuntu has no
+    # such file (it uses common-auth), so a ubuntu runner would SKIP and go
+    # green forever - the same "green on the wrong distro" trap this repo has
+    # already hit once with udev on ubuntu-latest.
+    runs-on: ubuntu-latest
+    container: archlinux:base
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install pambase to get the file we fork
+        run: pacman -Syu --noconfirm --needed pambase
+
+      - name: Check etc/pam.d/system-auth against pambase
+        run: bash tests/check-pam-drift.sh etc/pam.d/system-auth
+
   security:
     name: Security
     uses: shani8dev/shani-ci-commons/.github/workflows/security.yml@main
