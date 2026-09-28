@@ -23,8 +23,14 @@ the rest.
 - `Where a given config file actually belongs — four candidate homes`
 - `If you have Superpowers / oh-my-opencode / ultrawork / similar available`
 
-**On-demand reference — do not page through speculatively:**
+**Current known issues — read this before you start:**
 - `Audit-verified known issues (confirmed present)` — ~188 lines
+
+  This section mixes fixed history with issues that are **still open**,
+  including Critical security ones. Grep it for `not fixed`,
+  `still open`, and your subsystem name before you touch anything.
+
+**Background reference — skippable, pure survey material:**
 - `Where things are documented`
 - `Garuda Cross-Reference Findings (added 2026-09-17)`
 
