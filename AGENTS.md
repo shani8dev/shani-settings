@@ -24,7 +24,7 @@ the rest.
 - `If you have Superpowers / oh-my-opencode / ultrawork / similar available`
 
 **On-demand reference — do not page through speculatively:**
-- `Audit-verified known issues (confirmed present)` — ~255 of this file's 435 lines
+- `Audit-verified known issues (confirmed present)` — ~188 lines
 - `Where things are documented`
 - `Garuda Cross-Reference Findings (added 2026-09-17)`
 
