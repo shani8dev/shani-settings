@@ -53,6 +53,47 @@ correct." It is verified by observing the actual behavior of the real
 thing in the real environment — built, served, deployed, signed, running.
 If you haven't seen it work (or fail) for real, it isn't verified.
 
+## Test harness: shani-testbed (use it - and improve it, never invent around it)
+
+The ecosystem's real test harness is the sibling repo **`../shani-testbed`**
+(read its `README.md` and `AGENTS.md`). It installs a real ShaniOS image with
+the real installer, boots its slots (`systemd-nspawn`, and UEFI + TPM VMs),
+runs real deploys and rollbacks, drives GUI apps through their accessibility
+tree, and checks web pages in a real headless browser. Every command runs from
+`../shani-install-media`, which provides the builder container:
+
+```bash
+cd ../shani-install-media
+./run_in_container.sh build.sh test <command> ...   # `... test help` lists them all
+```
+
+**If the check you need does not exist, add it to shani-testbed - do not invent
+around it.** A one-off script in this repo, a scratchpad, or a heredoc piped
+into a container is lost when the session ends, and the next agent re-derives
+it. Extend the harness instead (see "Extend the harness" in its AGENTS.md):
+
+- an in-slot check -> `shani-testbed/slot-tests/<name>.sh` (`# slot-test-mode: boot`,
+  prints `RESULT <name> PASS|FAIL|SKIP` lines), run by `slot-test <slot> <name>`;
+- a GUI interaction or assertion -> an `app` action in `lib/app.sh`, or a walk
+  through a real app as `app-scripts/<app>.actions`;
+- a web check -> `lib/web_client.py`;
+- a new way to boot, drive or observe -> a command or option in `lib/`;
+
+each with a negative control (a check that cannot fail is not a check), its
+self-test (`tests/run-app-actions.sh`, `tests/run-web-client.sh`, ...), and the
+`usage` + README updated. One harness run at a time: disk-touching commands
+take `disk/.testbed.lock` and a second run is refused. Plain nspawn boots see
+the image's whole `/var`; real boots have an empty tmpfs `/var`
+(`systemd.volatile=state`) - use `slot-test --volatile`, or a real UEFI boot
+with `iso-install --boot-only --console-exec=CMD`, for anything touching `/var`.
+
+### What to run for this repo
+
+- `slot-test <slot> config-validators fresh-user pam-wiring unit-verify`
+  checks this repo's files as the INSTALLED image has them, after every package
+  and overlay - run it plain and with `--volatile`.
+- An unpublished build: `--local-pkg=<file>`.
+
 ## Rule: syntax-check every config with its own real validator, don't eyeball it
 
 A config file that "reads fine" and one that a real daemon will actually
@@ -277,7 +318,19 @@ rather than writing in a generic format.
   verified by reading both rules — the dedicated one fires on the exact
   same action id/subject conditions, just with an added (already-satisfied
   for a normal self-service call) uid check.
-- **This repo now owns `/etc/pam.d/system-auth` (shipped 2026-09-26); it is the
+- **`/etc/pam.d/system-auth` MOVED to shani-install-media's shared image
+  overlay (2026-10-01) - this repo no longer ships it, and must not again.**
+  As a file this package owned it collided with pambase's own: pacman refuses
+  two packages owning one path, so every image build from 2026-09-26 died at
+  pacstrap (`/etc/pam.d/system-auth exists in both 'pambase' and
+  'shani-settings'`), unnoticed because no image was built in between. The
+  overlay is copied over pacstrap's result, and an image-based install never
+  runs pacman, so the override reaches every machine with no ownership clash.
+  The file now lives at `shani-install-media/image_profiles/shared/overlay/rootfs/etc/pam.d/system-auth`,
+  its drift check at `shani-install-media/scripts/check-pam-drift.sh` (CI:
+  that repo's `pam-drift.yml`, weekly too). The history below is still the
+  reasoning for the file's content.
+- **(History) This repo owned `/etc/pam.d/system-auth` from 2026-09-26; it was the
   ONLY PAM file here, and it is a fork of a pambase file.** Until then this
   repo shipped no PAM file of any kind, which is why the notes below about
   "stock pambase configuration" are the *pre-override* state — re-read them
