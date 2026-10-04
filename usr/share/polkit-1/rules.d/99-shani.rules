@@ -967,4 +967,46 @@ polkit.addRule(function(action, subject) {
           subject.isInGroup("wheel")) {
           return polkit.Result.AUTH_SELF;
       }
+  })
+
+  // ── Chronoa lab-network builder (wheel) ──────────────────────────────────────
+  // shani-chronoa-lab-network builds and tears down isolated lab networks out of
+  // Linux network namespaces, veth pairs and nftables. It needs root because
+  // creating a namespace requires CAP_NET_ADMIN.
+  //
+  // Wheel + AUTH_SELF, matching shani-deploy, gen-efi and shani-cassini-save
+  // above, and deliberately not Tier 1. It is the only grant in this file that
+  // creates network interfaces on the machine, so it sits at the stricter end:
+  // any wheel member can do this once per network, and never silently.
+  //
+  // Not AUTH_ADMIN: nothing here is irreversible. A lab network is removed by
+  // name, only ever one this tool recorded as its own, and every address it
+  // hands out is private. AUTH_ADMIN is for the irreversible tier above (a
+  // factory reset, an account takeover).
+  //
+  // What the caller cannot do through this grant:
+  //   - run a different program. The check is on the exact path, and there is no
+  //     `.policy` file annotating it, so the action stays
+  //     org.freedesktop.policykit.exec with this program in its detail. An
+  //     exec.path annotation would resolve authorisation to the *annotated*
+  //     action instead and this rule would never match - the same trap already
+  //     documented for shani-cassini-save above.
+  //   - pass its own commands. The helper takes only subcommands and a path to
+  //     a plan file; every command it runs is re-derived from that file by
+  //     netprovision.revalidate() and executed as an argv array, never a
+  //     shell string. A hand-edited plan is refused if a single step differs
+  //     from what the builder itself would have produced.
+  //   - remove something this tool did not build. Teardown works from the
+  //     tool's own record, so a namespace it never created is never touched.
+  //
+  // The single thing it does grant: a wheel member who types their own password
+  // can add and remove kernel network interfaces. That is the point of the tool,
+  // and it is the cost of it.
+  polkit.addRule(function(action, subject) {
+      if (action.id == "org.freedesktop.policykit.exec" &&
+          action.lookup("program") == "/usr/bin/shani-chronoa-lab-network" &&
+          subject.active == true && subject.local == true &&
+          subject.isInGroup("wheel")) {
+          return polkit.Result.AUTH_SELF;
+      }
   });
