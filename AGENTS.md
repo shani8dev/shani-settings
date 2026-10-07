@@ -271,13 +271,69 @@ rather than writing in a generic format.
   `99-systemd.rules` runs on a net "add" event
   (`systemd-sysctl --prefix=/net/ipv4/conf/virbr0`) moved it 2 → 0. Now
   prefixed with `-` (skip if missing): boot is silent and hotplug still
-  applies 0. Result: 14 → 5 "missing" lines in the container. The 5 left
-  (`net.ipv4.neigh.default.gc_thresh1-3`, `net.core.bpf_jit_harden`,
-  `net.core.netdev_max_backlog`) exist only in the initial netns and are
-  present on the real host kernel, so they are not bugs.
-  `tests/validate-configs.sh` + `tests/test_validator.sh` (8/8) still
-  pass. Ships only after `shani-pkgbuilds/shani-settings/PKGBUILD`'s
-  `_commit` is bumped.
+  applies 0. Result: 14 → 5 "missing" lines in the container. Ships only
+  after `shani-pkgbuilds/shani-settings/PKGBUILD`'s `_commit` is bumped.
+
+- **The last 5 unresolvable sysctl keys are fixed too, and the conclusion the
+  entry above drew about them was wrong — FIXED (2026-10-07).** That entry
+  closed with "the 5 left … exist only in the initial netns and are present on
+  the real host kernel, **so they are not bugs**". The first half was measured
+  and correct; **the conclusion was not**, and it was reached from a
+  container-only measurement.
+
+  The 5 are `net.ipv4.neigh.default.gc_thresh1-3`
+  (`80-gamecompatibility.conf`), `net.core.bpf_jit_harden`
+  (`90-security-hardening.conf`) and `net.core.netdev_max_backlog`
+  (`99-sysctl-shani.conf`). All five are **per-network-namespace
+  registrations**, so they log `Couldn't write … No such file or directory` on
+  every `sysctl --system` in a fresh namespace — and a fresh namespace is
+  exactly what a container or an image-build chroot runs in, so this was never
+  theoretical. All five now carry the `-` (skip-if-absent) prefix, with the
+  measurement in each file's own comment.
+
+  **Measured both directions on the 7.0 kernel, because "absent in one
+  namespace" and "absent everywhere" had to be separated:**
+
+  | namespace | the 5 present? | `systemd-sysctl` log lines, before → after |
+  | --- | --- | --- |
+  | initial (`--network=host`) | yes, all 5 | 5 → **0** |
+  | fresh (docker default) | **none** of the 5 | 5 → **0** |
+
+  And the prefix demonstrably does **not** disable the setting, which is the
+  failure a "just silence the log" fix would have caused. In the initial
+  namespace, after applying the files: `gc_thresh1/2/3` moved
+  128/512/1024 → 512/2048/4096, `netdev_max_backlog` 1000 → 16384, and
+  `bpf_jit_harden` → 2. Read out of `/proc/sys` before and after, not inferred
+  from the absence of an error.
+
+  The evidence for *why* they go missing, since it was the missing step last
+  time:
+  - `/proc/sys/net/ipv4/neigh/` in the initial namespace holds `default` plus
+    one directory per interface. A fresh namespace holds only `lo` and whatever
+    pairs the runtime has added — there is **no `default` directory to write
+    into** until some interface creates one.
+  - `/proc/sys/net/core/` in the initial namespace contains `bpf_jit_harden`
+    and `netdev_max_backlog`. A fresh namespace has only
+    `bypass_prot_mem optmem_max rmem_default rmem_max rps_default_mask
+    somaxconn tstamp_allow_data txq_reselection_ms txrehash wmem_default
+    wmem_max xfrm_*`, and neither key is among them.
+
+  **The generalisable lesson, and it is about method: the unprivileged
+  container is the only cheap way to run `systemd-sysctl` here, and it is the
+  WRONG namespace to judge a namespace-scoped key in.** Every future sysctl
+  claim in this repo has to be checked in both namespaces, or it is a claim
+  about the container rather than about Shanios.
+
+  **Covered by `shani-testbed/slot-tests/sysctl-hardening.sh`**, which asserts
+  the five *where the kernel exposes them* (PASS in the initial namespace) and
+  reports SKIP naming the key where it does not — so a future change cannot buy
+  a clean boot log by quietly dropping the value. Regressing either key in the
+  config was run as a negative control and FAILs naming the key. Its own
+  negative controls had to be rewritten once: they originally asserted wrong
+  values for keys **no config sets**, so every one reported SKIP — a control
+  that cannot fail is not a control, and this file has been bitten by that
+  class repeatedly. They now assert wrong values for keys the config really
+  sets, and the run FAILS if any control does not fail.
 
 - **`map to guest = Bad Password` — FIXED.** Was: `etc/samba/smb.conf` —
   a real username with a *wrong* password silently mapped to guest access

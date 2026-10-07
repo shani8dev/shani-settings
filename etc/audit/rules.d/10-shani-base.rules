@@ -43,7 +43,13 @@
 -a always,exit -F arch=b64 -S init_module -S finit_module -S delete_module -k modules
 
 # ── System time changes ───────────────────────────────────────────────────────
--a always,exit -F arch=b64 -S adjtimex -S settimeofday -k time-change
+# clock_settime added 2026-10-07: settimeofday is the legacy entry point and
+# clock_settime is the timespec one, and they are SEPARATE syscall numbers —
+# adjtimex + settimeofday alone does not catch a modern time-sync daemon.
+# Verified by grepping the ecosystem for the time-setting path: shani-settings'
+# own .install runs `systemctl enable systemd-timesyncd`, so the fleet has a
+# daemon that can set the clock and was previously unaudited while doing it.
+-a always,exit -F arch=b64 -S adjtimex -S settimeofday -S clock_settime -k time-change
 -a always,exit -F arch=b32 -S adjtimex -S settimeofday -S stime -k time-change
 -w /etc/localtime -p wa -k time-change
 
@@ -51,6 +57,19 @@
 -a always,exit -F arch=b64 -S sethostname -S setdomainname -k system-locale
 -w /etc/hosts -p wa -k system-locale
 -w /etc/hostname -p wa -k system-locale
+
+# NetworkManager is the one network manager on every profile that installs this
+# package (shani-pkgbuilds/shani-network depends on networkmanager and its
+# .install runs `systemctl enable NetworkManager.service`). Its connection
+# profiles are therefore the actual network configuration on this machine —
+# including VPN credentials and static addressing — and /etc/hosts and
+# /etc/hostname above cover only a fraction of it. Added 2026-10-07.
+-w /etc/NetworkManager/ -p wa -k network
+# system-connections holds the per-profile .nmconnection files (VPN
+# certificates, PSKs, static routes) as referenced by the directory watch
+# above; naming it explicitly is redundant for audit but documents intent and
+# survives a future change that narrows the parent watch to specific files.
+-w /etc/NetworkManager/system-connections/ -p wa -k network
 
 # ── Make the configuration immutable (optional — comment out during tuning) ──
 # Once set, rules cannot be changed until reboot.

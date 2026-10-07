@@ -64,6 +64,21 @@ check "corrupted systemd conf.d drop-in" fail "$d"
 echo "Test 8: a nonexistent repo root is rejected..."
 check "nonexistent path" fail "/nonexistent-repo-root-$$"
 
+# Test 9 covers the sshd drop-in class, but only when a real sshd is on PATH:
+# validate-configs.sh WARNs and skips that block without one, so asserting
+# "fail" here without sshd would demand a failure the validator deliberately
+# does not produce, and asserting "pass" would assert nothing was checked.
+# Skipping explicitly is the honest outcome - a control that cannot fail is not
+# a control.
+if command -v sshd >/dev/null 2>&1 && command -v ssh-keygen >/dev/null 2>&1; then
+    echo "Test 9: a broken sshd drop-in is caught..."
+    d="$TMPDIR/t9"; cp -r "$REPO_ROOT" "$d"
+    printf 'ClientAliveInterval notanumber\n' >> "$d/etc/ssh/sshd_config.d/00-shani-hardening.conf"
+    check "corrupted sshd_config.d drop-in" fail "$d"
+else
+    echo "Test 9: SKIPPED (no sshd/ssh-keygen on PATH; the sshd block would be skipped, not exercised)"
+fi
+
 if [[ $FAILED -eq 0 ]]; then
     echo "All validator tests passed!"
     exit 0

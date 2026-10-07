@@ -38,6 +38,54 @@ if compgen -G "$REPO_ROOT/etc/sudoers.d/*" >/dev/null 2>&1; then
     done
 fi
 
+# ── SSH server drop-ins ────────────────────────────────────────────────────
+# sshd has no per-file syntax check: `sshd -t -f <dropin>` cannot parse a drop-in
+# on its own, because the file is only ever read through the Include in
+# sshd_config, and the whole point of a drop-in is that it composes with the
+# main config and with Arch's own 99-archlinux.conf. So the real check is a
+# synthetic main config that Includes this repo's drop-in directory plus Arch's,
+# which is exactly what the installed system does.
+#
+# `sshd -t` needs at least one readable host key or it exits before parsing
+# ("no hostkeys available -- exiting"), which would make this check pass for
+# the wrong reason. A throwaway ed25519 key is generated for the check and
+# thrown away with the temp dir; it is never a usable server key.
+if compgen -G "$REPO_ROOT/etc/ssh/sshd_config.d/*.conf" >/dev/null 2>&1; then
+    if ! command -v sshd >/dev/null 2>&1; then
+        WARN "sshd not installed, skipping etc/ssh/sshd_config.d/*.conf (install openssh)"
+    elif ! command -v ssh-keygen >/dev/null 2>&1; then
+        WARN "ssh-keygen not installed, skipping etc/ssh/sshd_config.d/*.conf (install openssh)"
+    else
+        sshd_tmp=$(mktemp -d)
+        # Arch's shipped 99-archlinux.conf, so the check also proves this repo's
+        # drop-ins compose with it rather than only being valid in isolation.
+        # Sourced from the installed openssh package when present so it tracks
+        # upstream; skipped (with a warning) if it isn't.
+        arch_sshd_conf=""
+        for cand in /etc/ssh/sshd_config.d/99-archlinux.conf; do
+            [[ -f "$cand" ]] && { arch_sshd_conf="$cand"; break; }
+        done
+        cp "$REPO_ROOT"/etc/ssh/sshd_config.d/*.conf "$sshd_tmp"/
+        if [[ -n "$arch_sshd_conf" ]]; then
+            cp "$arch_sshd_conf" "$sshd_tmp"/
+        else
+            WARN "Arch's 99-archlinux.conf not found; sshd drop-ins checked without it"
+        fi
+        {
+            echo "Include $sshd_tmp/*.conf"
+            echo "HostKey $sshd_tmp/throwaway_hostkey"
+        } > "$sshd_tmp/main_config"
+        if ! ssh-keygen -q -t ed25519 -f "$sshd_tmp/throwaway_hostkey" -N '' -C validate-configs >/dev/null 2>&1; then
+            FAIL "could not generate a throwaway host key to validate etc/ssh/sshd_config.d/*.conf"
+        elif out=$(sshd -t -f "$sshd_tmp/main_config" 2>&1); then
+            :
+        else
+            FAIL "sshd rejected etc/ssh/sshd_config.d/*.conf: $out"
+        fi
+        rm -rf "$sshd_tmp"
+    fi
+fi
+
 # ── Samba ─────────────────────────────────────────────────────────────────
 if [[ -f "$REPO_ROOT/etc/samba/smb.conf" ]]; then
     if command -v testparm >/dev/null 2>&1; then
