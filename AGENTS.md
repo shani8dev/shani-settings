@@ -526,6 +526,9 @@ rather than writing in a generic format.
   `BATTERYLEVEL`/`MINUTES` have no upsmon equivalent — upsmon acts on the UPS *hardware's own*
   low-battery signal, and a charge/runtime trigger needs `dummy-ups` + `upssched`. A real
   reduction in configurability, said so in `upsmon.conf` itself rather than left to discover.
+- **`etc/nut/` proven on a real boot, not only against a real NUT install (2026-10-10).** The container run proved the config parses and the daemons run when started by hand - upsd "listening on 127.0.0.1 port 3493", upsmon "UPS: myups@localhost (primary) ... using power down flag file /etc/killpower". What that could not prove was the *units*, because systemd does not come up inside a Docker container on this host.
+  `shani-testbed`'s `slot-tests/nut-stack.sh` closes it on a booted slot: **12 pass, 0 fail**, both units active, upsd on loopback only, upsmon reading the MONITOR line, `upsc` answering "Unknown UPS" because there is genuinely no device, and the **negative control holding** - with `ALLOW_NO_DEVICE` forced false, upsd refuses to start, which is the proof that the one line making this a sane fresh-install default is the line actually running.
+  **What the first failing run taught**, because the diagnosis is the reusable part: `--local-pkg` overlays files and explicitly runs **no install scriptlet**, so systemd-sysusers (the `nut` group) and systemd-tmpfiles (`/var/lib/nut`, `/run/nut`) never ran. systemd reported only "exit-code"; running the daemons in the foreground gave the real reason - `Can't chdir to /var/lib/nut` and `OS user nut not found` - which is a missing user, not a wrong config, and reads exactly like the latter. The test now runs the fragments Arch's nut package declares rather than re-typing them.
 ## Cross-repo impact — check before calling a fix complete
 
 `shani-pkgbuilds/shani-settings/PKGBUILD` packages this repo's `etc/`/`usr/`
