@@ -29,13 +29,29 @@ FAIL() { echo "ERROR: $*" >&2; ERRORS=$((ERRORS + 1)); }
 WARN() { echo "WARN: $*" >&2; }
 
 # ── sudoers.d fragments ──────────────────────────────────────────────────
+# `visudo -c -f` on a *fragment* validates the file as a standalone sudoers
+# file, which is what a drop-in is meant to be.
+#
+# Unlike the sections below, this one used to have no `command -v visudo` guard:
+# on a machine without the `sudo` package the invocation failed with 127 and
+# `FAIL "visudo rejected ..."` fired for every fragment — a false failure that
+# reads as a syntax error in this repo. Found 2026-10-10 by running the script
+# in an Arch container that had the audit but not the sudo package: the script
+# reported 4 "visudo rejected" errors on files visudo parses fine, because the
+# binary did not exist. Every other section here already guarded for its tool
+# (testparm, sshd, ssh-keygen, node); this was the one that didn't, and CI never
+# caught it because ubuntu-latest ships sudo.
 if compgen -G "$REPO_ROOT/etc/sudoers.d/*" >/dev/null 2>&1; then
-    for f in "$REPO_ROOT"/etc/sudoers.d/*; do
-        [[ -f "$f" ]] || continue
-        if ! visudo -c -f "$f" >/dev/null 2>&1; then
-            FAIL "visudo rejected $f"
-        fi
-    done
+    if ! command -v visudo >/dev/null 2>&1; then
+        WARN "visudo not installed, skipping etc/sudoers.d/* (install sudo)"
+    else
+        for f in "$REPO_ROOT"/etc/sudoers.d/*; do
+            [[ -f "$f" ]] || continue
+            if ! visudo -c -f "$f" >/dev/null 2>&1; then
+                FAIL "visudo rejected $f"
+            fi
+        done
+    fi
 fi
 
 # ── SSH server drop-ins ────────────────────────────────────────────────────
@@ -169,6 +185,57 @@ if compgen -G "$REPO_ROOT/usr/lib/systemd/*.conf.d/*.conf" >/dev/null 2>&1; then
             FAIL "$f has a line that isn't a comment, [Section], or Key=Value"
         fi
     done
+fi
+
+# ── audit rules ───────────────────────────────────────────────────────────
+# `augenrules --check` is NOT usable here and is not used: measured on a real
+# Arch tree (audit 4.x), it returns 0 for a file containing the literal text
+# "this is not a rule" and for "-w /etc/passwd -p zzz -k identity". It reports
+# only whether the rules have changed since the last load, so it is a check
+# that cannot fail — the failure mode AGENTS.md warns about.
+#
+# `auditctl -R` is the real parser, and it does discriminate even where the
+# kernel refuses the load (no CAP_AUDIT_CONTROL, or audit compiled out — which
+# is the case in a normal build container):
+#   * a rule that PARSES reaches the netlink call and prints
+#     "Error sending add rule data request (Operation not permitted)"
+#   * a rule that FAILS to parse exits 1 with no output at all
+# So "no output and non-zero" is a real syntax error, and the EPERM wording is
+# the signature of a valid rule this environment simply cannot load.
+#
+# The audit *directives* (-b buffer, -f failure mode, -D, -e) are shaped
+# differently and are validated structurally: `auditctl -R` on a lone `-b 8192`
+# also exits 1 with no output, which would make this section report the two
+# pre-existing directive lines in this very file as failures on every run — a
+# permanently red check, which is as useless as a permanently green one.
+if compgen -G "$REPO_ROOT/etc/audit/rules.d/*.rules" >/dev/null 2>&1; then
+    if ! command -v auditctl >/dev/null 2>&1; then
+        WARN "auditctl not installed, skipping etc/audit/rules.d/*.rules (install audit)"
+    else
+        for f in "$REPO_ROOT"/etc/audit/rules.d/*.rules; do
+            [[ -f "$f" ]] || continue
+            lineno=0
+            while IFS= read -r line || [[ -n "$line" ]]; do
+                lineno=$((lineno + 1))
+                # Comments and blank lines are not rules.
+                case "$line" in ""|\#*) continue ;; esac
+                # Directives: -b <number>, -f <number>, -e <1|2>, -D, -r/-C freq.
+                if [[ "$line" =~ ^-[bD](\ |-$) ]] || [[ "$line" =~ ^-[fe]\ [0-9]+$ ]]; then
+                    continue
+                fi
+                printf '%s\n' "$line" > "$REPO_ROOT/.audit-one-check.tmp"
+                out=$(auditctl -R "$REPO_ROOT/.audit-one-check.tmp" 2>&1)
+                if echo "$out" | grep -q "Error sending add rule data request"; then
+                    :   # parsed fine; the kernel refused, which is not our problem here
+                elif [[ -z "$out" ]]; then
+                    FAIL "auditctl rejected $f line $lineno (unparseable rule): $line"
+                else
+                    FAIL "auditctl rejected $f line $lineno: $out"
+                fi
+            done < "$f"
+            rm -f "$REPO_ROOT/.audit-one-check.tmp"
+        done
+    fi
 fi
 
 if [[ $ERRORS -eq 0 ]]; then

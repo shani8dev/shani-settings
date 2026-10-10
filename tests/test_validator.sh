@@ -52,9 +52,19 @@ printf 'this is not a valid udev rule line at all\n' >> "$d/usr/lib/udev/rules.d
 check "40-hpet-permissions.rules with an unrelated new error" fail "$d"
 
 echo "Test 6: invalid JS syntax in the polkit rules file is caught..."
-d="$TMPDIR/t6"; cp -r "$REPO_ROOT" "$d"
-printf '\nfunction broken( {\n' >> "$d/usr/share/polkit-1/rules.d/99-shani.rules"
-check "corrupted polkit rules (invalid JS)" fail "$d"
+# Guarded like Tests 9-11: validate-configs.sh WARNs and skips this block when
+# `node` is absent, so an unguarded "fail" assertion demands a failure the
+# validator deliberately does not produce. This exact case was left unguarded
+# and failed for that reason on a host without node (found 2026-10-10, when
+# Tests 10-11 were added with guards and Test 6 was the one control left
+# reporting a false failure).
+if command -v node >/dev/null 2>&1; then
+    d="$TMPDIR/t6"; cp -r "$REPO_ROOT" "$d"
+    printf '\nfunction broken( {\n' >> "$d/usr/share/polkit-1/rules.d/99-shani.rules"
+    check "corrupted polkit rules (invalid JS)" fail "$d"
+else
+    echo "Test 6: SKIPPED (no node on PATH; the polkit block would be skipped, not exercised)"
+fi
 
 echo "Test 7: a malformed systemd conf.d drop-in is caught..."
 d="$TMPDIR/t7"; cp -r "$REPO_ROOT" "$d"
@@ -77,6 +87,33 @@ if command -v sshd >/dev/null 2>&1 && command -v ssh-keygen >/dev/null 2>&1; the
     check "corrupted sshd_config.d drop-in" fail "$d"
 else
     echo "Test 9: SKIPPED (no sshd/ssh-keygen on PATH; the sshd block would be skipped, not exercised)"
+fi
+
+# Test 10 covers the audit rules, on the same terms as Test 9: validate-configs.sh
+# WARNs and skips the block when auditctl is absent, so asserting "fail" without
+# it would demand a failure the validator deliberately does not produce.
+#
+# `augenrules --check` is NOT the validator here and is not used as a control:
+# measured on a real Arch tree (audit 4.x) it returns 0 for a file containing
+# nothing but the text "this is not a rule". A control that cannot fail is not a
+# control, so this uses the same discriminator validate-configs.sh uses — an
+# unparseable rule makes auditctl exit non-zero with no output, whereas a rule
+# that parses reaches the kernel and fails with "Error sending add rule data
+# request". That is precisely why the check works on hosts with no CAP_AUDIT_CONTROL.
+if command -v auditctl >/dev/null 2>&1; then
+    echo "Test 10: an unparseable audit rule is caught..."
+    d="$TMPDIR/t10"; cp -r "$REPO_ROOT" "$d"
+    # A bad permission filter (-p zzz) is a real audit-syntax error, not a
+    # semantic one, so it is caught by the parser anywhere it runs.
+    printf -- '-w /etc/passwd -p zzz -k identity\n' >> "$d/etc/audit/rules.d/10-shani-base.rules"
+    check "unparseable audit rule (-p zzz)" fail "$d"
+
+    echo "Test 11: a line that is not a rule at all is caught..."
+    d="$TMPDIR/t11"; cp -r "$REPO_ROOT" "$d"
+    printf 'this is not an audit rule\n' >> "$d/etc/audit/rules.d/10-shani-base.rules"
+    check "garbage line in audit rules" fail "$d"
+else
+    echo "Test 10-11: SKIPPED (no auditctl on PATH; the audit block would be skipped, not exercised)"
 fi
 
 if [[ $FAILED -eq 0 ]]; then
