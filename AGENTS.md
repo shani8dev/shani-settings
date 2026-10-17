@@ -566,6 +566,59 @@ rather than writing in a generic format.
   the assertion that exists for them. The regression guard is the one that would have caught the
   original bug: the package must ship nothing under `etc/nut`.
 
+- **The NUT install hook had two defects that 17 passing assertions could not see
+  — both found by reading a REAL built image, not the hook (2026-10-17).** The
+  configs moved to `/usr/share/shani/nut/` as templates and are written into
+  `/etc/nut` by `install_nut_baseline`, because shipping them collided with
+  `nut` and killed every image build. Neither problem was in the *content*;
+  both were in the decision logic around it.
+
+  **(1) The "the admin edited this" check could never fire.** It grepped for
+  `warning: nut: /etc/nut/<f> (Modification detected)`. Measured against a
+  freshly built image, pacman reports two different things:
+
+  ```
+  backup file: nut: /etc/nut/nut.conf (SHA256 checksum mismatch)
+  warning:     nut: /etc/nut/upsd.conf (GID mismatch)
+  ```
+
+  Content drift on a backup file arrives under a **`backup file:`** prefix with
+  a *content* reason; `warning:` only ever carries *attribute* reasons. The
+  string being matched appeared nowhere in the output, so that branch had never
+  fired on a real system. It failed **silently rather than loudly** because the
+  manifest covers the usual case, so the broken path is only reached when the
+  manifest is missing — which is exactly when nobody is looking.
+
+  **(2) The manifest went stale the moment it was written.** `install_nut_baseline`
+  records what it wrote; `add_nut_monitor_user` then inserts the MONITOR line
+  into `upsmon.conf`. The recorded hash therefore described a file that no
+  longer existed, and on the next run `have != recorded` reads as *the admin
+  edited it* and refuses to refresh it forever. That is exactly the failure the
+  manifest exists to prevent, reached by a second writer inside the same hook —
+  and the only symptom would be a corrected `upsmon.conf` silently never
+  reaching existing installs. `record_nut_baseline()` now re-hashes after the
+  last writer, and claims only files the manifest already holds, so a file the
+  admin has taken over is never re-asserted.
+
+  **The test suite had been asserting against a format pacman never emits.**
+  Every case for this logic stubbed `pacman -Qkk` with output I invented. A
+  fixture shaped unlike the real tool's is precisely how (1) shipped through a
+  fully green suite; the strings are now pacman's actual ones.
+
+  **And the suite could not see the wiring either.** A mutant deleting the
+  `record_nut_baseline` call from `post_upgrade` *survived*, because every
+  behavioural case invokes the functions directly — the same shape as
+  `shani-deploy`'s `pcrlock-status`, which sat in a dispatcher but not in its
+  guard. There is now an assertion on the call order in `post_upgrade` itself.
+  **18 assertions, 6/6 mutants killed** (recorder removed, order swapped, MONITOR
+  insert removed, recorder claiming everything, and the original invented grep).
+
+  **The general lesson, and it is the third time this file's work has produced
+  it:** *measure the thing you are parsing, and do not put your model of it in a
+  fixture.* The NUT configs themselves were proven correct against a real NUT
+  2.8.5 install; the failure was entirely in the code that decides when to
+  write them, written against an assumed interface rather than an observed one.
+
 - **`etc/nut/` proven on a real boot, not only against a real NUT install (2026-10-10).** The container run proved the config parses and the daemons run when started by hand - upsd "listening on 127.0.0.1 port 3493", upsmon "UPS: myups@localhost (primary) ... using power down flag file /etc/killpower". What that could not prove was the *units*, because systemd does not come up inside a Docker container on this host.
   `shani-testbed`'s `slot-tests/nut-stack.sh` closes it on a booted slot: **12 pass, 0 fail**, both units active, upsd on loopback only, upsmon reading the MONITOR line, `upsc` answering "Unknown UPS" because there is genuinely no device, and the **negative control holding** - with `ALLOW_NO_DEVICE` forced false, upsd refuses to start, which is the proof that the one line making this a sane fresh-install default is the line actually running.
   **What the first failing run taught**, because the diagnosis is the reusable part: `--local-pkg` overlays files and explicitly runs **no install scriptlet**, so systemd-sysusers (the `nut` group) and systemd-tmpfiles (`/var/lib/nut`, `/run/nut`) never ran. systemd reported only "exit-code"; running the daemons in the foreground gave the real reason - `Can't chdir to /var/lib/nut` and `OS user nut not found` - which is a missing user, not a wrong config, and reads exactly like the latter. The test now runs the fragments Arch's nut package declares rather than re-typing them.
