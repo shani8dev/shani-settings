@@ -622,6 +622,23 @@ rather than writing in a generic format.
 - **`etc/nut/` proven on a real boot, not only against a real NUT install (2026-10-10).** The container run proved the config parses and the daemons run when started by hand - upsd "listening on 127.0.0.1 port 3493", upsmon "UPS: myups@localhost (primary) ... using power down flag file /etc/killpower". What that could not prove was the *units*, because systemd does not come up inside a Docker container on this host.
   `shani-testbed`'s `slot-tests/nut-stack.sh` closes it on a booted slot: **12 pass, 0 fail**, both units active, upsd on loopback only, upsmon reading the MONITOR line, `upsc` answering "Unknown UPS" because there is genuinely no device, and the **negative control holding** - with `ALLOW_NO_DEVICE` forced false, upsd refuses to start, which is the proof that the one line making this a sane fresh-install default is the line actually running.
   **What the first failing run taught**, because the diagnosis is the reusable part: `--local-pkg` overlays files and explicitly runs **no install scriptlet**, so systemd-sysusers (the `nut` group) and systemd-tmpfiles (`/var/lib/nut`, `/run/nut`) never ran. systemd reported only "exit-code"; running the daemons in the foreground gave the real reason - `Can't chdir to /var/lib/nut` and `OS user nut not found` - which is a missing user, not a wrong config, and reads exactly like the latter. The test now runs the fragments Arch's nut package declares rather than re-typing them.
+- **Terminal integration added; LS_COLORS was never set (2026-11-12).**
+  `usr/share/shani/shell/terminal.zsh` and `terminal.bash`, sourced last by
+  `common.sh` (after starship, so its hooks run first), send OSC 7 (the folder,
+  every byte outside the safe set %-encoded: a new foot window opens there),
+  OSC 133 A/C/D (foot: jump between prompts, and `pipe-command-output`, which
+  shani-desktop-niri's foot.ini binds to Chronoa) and the title (the folder; in
+  zsh the running command while it runs). `SHANI_TERMINAL_INTEGRATION=0` turns
+  it off. Separately, nothing ran `dircolors`, so `.zshrc`'s completion
+  `list-colors` zstyle was fed an empty `LS_COLORS`: `common.sh` now sets it and
+  re-applies the zstyle for zsh (through `eval`, since bash parses the file too).
+  `.zshrc`'s own title hook is gone for new users (terminal.zsh's wins anyway,
+  as it runs later). **Verified** with `tests/test-shell-runtime.sh` in a
+  disposable Arch container: an interactive zsh and bash typed into, their raw
+  terminal bytes read - OSC 7 with `/a%20dir%20%C3%A9`, 133 A and C, the title;
+  the negative control (`SHANI_TERMINAL_INTEGRATION=0`) sends none of them; the
+  whole runtime test passes.
+
 ## Cross-repo impact — check before calling a fix complete
 
 `shani-pkgbuilds/shani-settings/PKGBUILD` packages this repo's `etc/`/`usr/`

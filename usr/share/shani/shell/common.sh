@@ -36,6 +36,13 @@ if command -v bat >/dev/null; then
     alias cat='bat --paging=never --style=plain'
 fi
 
+## LS_COLORS: plain ls's colours and zsh's completion menu (eza has its own)
+if [ -z "${LS_COLORS-}" ] && command -v dircolors >/dev/null; then
+    eval "$(dircolors -b)"
+    # .zshrc set the menu's colours before this ran, from an empty LS_COLORS
+    [ "$_shani_sh" = zsh ] && eval 'zstyle ":completion:*" list-colors "${(s.:.)LS_COLORS}"'
+fi
+
 ## Listing (eza: git status, icons via the Nerd symbols font)
 if command -v eza >/dev/null; then
     alias ls='eza --group-directories-first --icons=auto'
@@ -128,6 +135,16 @@ if command -v mcfly >/dev/null; then
     export MCFLY_RESULTS_SORT=LAST_RUN
     export MCFLY_PROMPT='❯'
     eval "$(mcfly init "$_shani_sh")"             # Ctrl-R
+fi
+
+## Terminal integration: the folder, prompt marks and the window title
+## (terminal.zsh / terminal.bash say what each gives you). Last, after
+## starship, so its hooks run in order with starship's.
+if [ -t 1 ] && [ "${TERM:-dumb}" != dumb ] && [ "${SHANI_TERMINAL_INTEGRATION:-1}" != 0 ]; then
+    for _shani_d in /usr/share/shani/shell /run/host/usr/share/shani/shell; do
+        [ -r "$_shani_d/terminal.$_shani_sh" ] && { . "$_shani_d/terminal.$_shani_sh"; break; }
+    done
+    unset _shani_d
 fi
 
 unset _shani_sh

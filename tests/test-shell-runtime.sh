@@ -168,6 +168,31 @@ if [[ -x $gen ]]; then
     grep -qx 'EDITOR=micro' <<<"$out" && grep -qx 'VISUAL=micro' <<<"$out" && pass "environment.d exports EDITOR/VISUAL" || fail "environment.d: $out"
 fi
 
+## terminal integration (usr/share/shani/shell/terminal.*): an interactive
+## session, typed into, tells the terminal its folder (OSC 7, %-encoded), marks
+## prompts and output (OSC 133) and sets the title; SHANI_TERMINAL_INTEGRATION=0
+## is the negative control - the same session must send none of it
+tdir="$H/a dir é"; as_user mkdir -p "$tdir"
+session() {  # shell, extra env -> the raw bytes the shell wrote to its terminal
+    printf 'cd %q\nls >/dev/null\nexit\n' "$tdir" | as_user env ${2:-} script -qefc "stty rows 40 cols 120; $1 -i" /dev/null 2>&1
+}
+for sh in zsh bash; do
+    on=$(session "$sh"); off=$(session "$sh" SHANI_TERMINAL_INTEGRATION=0)
+    miss=
+    grep -qF $'\e]7;file://' <<<"$on" || miss+=" osc7"
+    grep -qF '/a%20dir%20%C3%A9' <<<"$on" || miss+=" osc7-encoded"
+    grep -qF $'\e]133;A' <<<"$on" || miss+=" 133A"      # ours, or starship's own
+    grep -qF $'\e]133;C' <<<"$on" || miss+=" 133C"
+    grep -qF $'\e]2;~/a dir é' <<<"$on" || miss+=" title-folder"
+    [[ $sh == zsh ]] && { grep -qF $'\e]2;ls >/dev/null' <<<"$on" || miss+=" title-command"; }
+    if grep -qF -e $'\e]7;file://' -e $'\e]133;' <<<"$off"; then fail "$sh: terminal escapes sent with SHANI_TERMINAL_INTEGRATION=0"
+    elif [[ -n $miss ]]; then fail "$sh terminal integration missing:$miss"
+    else pass "$sh: folder (OSC 7), prompt marks (OSC 133) and title reach the terminal"; fi
+done
+## LS_COLORS is set, so zsh's completion menu is coloured
+out=$(in_pty "zsh -i -c 'zstyle -s \":completion:*\" list-colors _lc; print LSC=\${#LS_COLORS} MENU=\${#_lc}'")
+if grep -Eq 'LSC=[1-9][0-9]* MENU=[1-9]' <<<"$out"; then pass "LS_COLORS set; completion menu coloured"; else fail "LS_COLORS/list-colors: $out"; fi
+
 echo
 if [[ $FAILS -eq 0 ]]; then echo "All shell runtime checks passed"; exit 0; fi
 echo "$FAILS shell runtime check(s) failed"; exit 1

@@ -43,9 +43,8 @@ zstyle ':completion:*' use-cache on
 zstyle ':completion:*' cache-path ~/.cache/zsh/zcache
 autoload -U +X bashcompinit && bashcompinit
 
-# Terminal title: user@host:dir
-function set_win_title() { print -Pn "\e]0;%n@%m:%~\a" }
-precmd_functions+=(set_win_title)
+# The window title (the folder, or the command running) is set by
+# /usr/share/shani/shell/terminal.zsh, with the folder and prompt marks
 
 ## Keys
 # Use emacs key bindings
