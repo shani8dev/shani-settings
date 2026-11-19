@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- firewalld home zone for ShaniOS - for a network the person marked as
+     home in Settings > Network ("Home network": NetworkManager's
+     connection.zone=home for that network only). Every other network stays in
+     public.xml: nothing unsolicited comes in.
+
+     ShaniOS's own, not firewalld's stock home zone, which also lets ssh in:
+     a desktop does not open a remote login because it is at home. Here the
+     difference from public is only what sharing between your own devices
+     needs - and a service answers only when it is turned on (Settings >
+     Sharing for Samba, Nearby for LocalSend). Ananta OS's "Shield" zones,
+     with firewalld and NetworkManager doing the work. -->
+<zone>
+  <short>Home</short>
+  <description>ShaniOS desktop - a network you trust (your home). Devices here may find this computer and use what it shares when sharing is on; everything else inbound is rejected, as on any other network.</description>
+  <service name="mdns"/>
+  <service name="dhcpv6-client"/>
+  <!-- Settings > Sharing (Samba): only listens while sharing is on -->
+  <service name="samba"/>
+  <!-- Nearby (LocalSend): the port it listens on while it is open -->
+  <port port="53317" protocol="tcp"/>
+  <port port="53317" protocol="udp"/>
+</zone>
