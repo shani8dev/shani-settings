@@ -1,0 +1,8 @@
+# The ShaniOS disk's own partitions are not "drives" for the desktop: file
+# managers do not list them (UDISKS_IGNORE) and changing them through udisks -
+# formatting, deleting, mounting - asks for the administrator's password, as
+# for any system device (UDISKS_SYSTEM). GPT names from os-installer-config's
+# bits/part.sfdisk; the opened LUKS root is mapped as shani_root.
+# The idea is Ananta OS's disk guard (60-ananta-guard.rules).
+SUBSYSTEM=="block", ENV{ID_PART_ENTRY_NAME}=="shani_boot|shani_root", ENV{UDISKS_SYSTEM}="1", ENV{UDISKS_IGNORE}="1"
+SUBSYSTEM=="block", ENV{DM_NAME}=="shani_root", ENV{UDISKS_SYSTEM}="1", ENV{UDISKS_IGNORE}="1"
